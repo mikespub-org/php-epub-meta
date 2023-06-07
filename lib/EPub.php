@@ -11,8 +11,10 @@ class EPub
     public const METADATA_FILE = 'META-INF/container.xml';
     public $xml; //FIXME: change to protected, later
     public $toc;
+    public $nav;
     protected $xpath;
     protected $toc_xpath;
+    protected $nav_xpath;
     protected $file;
     protected $meta;
     protected $zip;
@@ -73,6 +75,22 @@ class EPub
     {
         $spine = $this->xpath->query('//opf:spine')->item(0);
         $tocid = $spine->getAttribute('toc');
+        if (empty($tocid)) {
+            $navhref = $this->xpath->query('//opf:manifest/opf:item[@properties="nav"]')->item(0)->attr('href');
+            $navpath = $this->getFullPath($navhref);
+            // read epub nav doc
+            if (!$this->zip->FileExists($navpath)) {
+                throw new Exception('Unable to find ' . $navpath);
+            }
+            $data = $this->zip->FileRead($navpath);
+            $this->nav = new DOMDocument();
+            $this->nav->registerNodeClass('DOMElement', 'EPubDOMElement');
+            $this->nav->loadXML($data);
+            $this->nav_xpath = new EPubDOMXPath($this->nav);
+            $rootNamespace = $this->nav->lookupNamespaceUri($this->nav->namespaceURI);
+            $this->nav_xpath->registerNamespace('x', $rootNamespace);
+            return;
+        }
         $tochref = $this->xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]')->item(0)->attr('href');
         $tocpath = $this->getFullPath($tochref);
         // read epub toc
@@ -236,10 +254,26 @@ class EPub
         return 'application/octet-stream';
     }
 
+    /**
+     * EPUB 2 navigation control file (NCX format)
+     * See https://idpf.org/epub/20/spec/OPF_2.0_latest.htm#Section2.4.1
+     */
     private function getNavPointDetail($node)
     {
         $title = $this->toc_xpath->query('x:navLabel/x:text', $node)->item(0)->nodeValue;
         $src = $this->toc_xpath->query('x:content', $node)->item(0)->attr('src');
+        $src = $this->encodeComponentName($src);
+        return ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
+    }
+
+    /**
+     * EPUB 3 navigation document (toc nav element)
+     * See https://www.w3.org/TR/epub-33/#sec-nav-toc
+     */
+    private function getNavTocListItem($node)
+    {
+        $title = $this->nav_xpath->query('x:a', $node)->item(0)->nodeValue;
+        $src = $this->nav_xpath->query('x:a', $node)->item(0)->attr('href');
         $src = $this->encodeComponentName($src);
         return ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
     }
@@ -252,6 +286,14 @@ class EPub
     public function contents()
     {
         $contents = [];
+        if (!empty($this->nav)) {
+            $toc = $this->nav_xpath->query('//x:nav[@epub:type="toc"]')->item(0);
+            $nodes = $this->nav_xpath->query('//x:ol/x:li', $toc);
+            foreach ($nodes as $node) {
+                $contents[] = $this->getNavTocListItem($node);
+            }
+            return $contents;
+        }
         $nodes = $this->toc_xpath->query('//x:ncx/x:navMap/x:navPoint');
         foreach ($nodes as $node) {
             $contents[] = $this->getNavPointDetail($node);
