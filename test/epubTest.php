@@ -1,6 +1,10 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use SebLucas\EPubMeta\EPub;
+
+// remove seblucas/tbszip from composer.json
+include_once(dirname(dirname(__DIR__)) . '/tbszip/tbszip.php');
 
 class EPubTest extends TestCase
 {

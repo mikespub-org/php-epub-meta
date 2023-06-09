@@ -6,6 +6,16 @@
  * @author Sébastien Lucas <sebastien@slucas.fr>
  */
 
+namespace SebLucas\EPubMeta;
+
+use DOMDocument;
+use Exception;
+use InvalidArgumentException;
+use SebLucas\TbsZip\clsTbsZip;
+use ZipArchive;
+
+use const SebLucas\TbsZip\TBSZIP_DOWNLOAD;
+
 class EPub
 {
     public const METADATA_FILE = 'META-INF/container.xml';
@@ -29,7 +39,7 @@ class EPub
      * @param string $zipClass class to handle zip
      * @throws Exception if metadata could not be loaded
      */
-    public function __construct($file, $zipClass = 'clsTbsZip')
+    public function __construct($file, $zipClass = clsTbsZip::class)
     {
         // open file
         $this->file = $file;
@@ -48,7 +58,7 @@ class EPub
             throw new Exception('Failed to access epub container data');
         }
         $xml = new DOMDocument();
-        $xml->registerNodeClass('DOMElement', 'EPubDOMElement');
+        $xml->registerNodeClass('DOMElement', EPubDOMElement::class);
         $xml->loadXML($data);
         $xpath = new EPubDOMXPath($xml);
         $nodes = $xpath->query('//n:rootfiles/n:rootfile[@media-type="application/oebps-package+xml"]');
@@ -65,7 +75,7 @@ class EPub
             throw new Exception('Failed to access epub metadata');
         }
         $this->xml =  new DOMDocument();
-        $this->xml->registerNodeClass('DOMElement', 'EPubDOMElement');
+        $this->xml->registerNodeClass('DOMElement', EPubDOMElement::class);
         $this->xml->loadXML($data);
         $this->xml->formatOutput = true;
         $this->xpath = new EPubDOMXPath($this->xml);
@@ -84,7 +94,7 @@ class EPub
             }
             $data = $this->zip->FileRead($navpath);
             $this->nav = new DOMDocument();
-            $this->nav->registerNodeClass('DOMElement', 'EPubDOMElement');
+            $this->nav->registerNodeClass('DOMElement', EPubDOMElement::class);
             $this->nav->loadXML($data);
             $this->nav_xpath = new EPubDOMXPath($this->nav);
             $rootNamespace = $this->nav->lookupNamespaceUri($this->nav->namespaceURI);
@@ -100,7 +110,7 @@ class EPub
 
         $data = $this->zip->FileRead($tocpath);
         $this->toc = new DOMDocument();
-        $this->toc->registerNodeClass('DOMElement', 'EPubDOMElement');
+        $this->toc->registerNodeClass('DOMElement', EPubDOMElement::class);
         $this->toc->loadXML($data);
         $this->toc_xpath = new EPubDOMXPath($this->toc);
         $rootNamespace = $this->toc->lookupNamespaceUri($this->toc->namespaceURI);

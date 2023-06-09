@@ -6,6 +6,11 @@
  * @author Sébastien Lucas <sebastien@slucas.fr>
  */
 
+namespace SebLucas\EPubMeta;
+
+use DOMDocument;
+use DOMXPath;
+
 class EPubDOMXPath extends DOMXPath
 {
     public function __construct(DOMDocument $doc)

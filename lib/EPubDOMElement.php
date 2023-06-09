@@ -6,6 +6,10 @@
  * @author Sébastien Lucas <sebastien@slucas.fr>
  */
 
+namespace SebLucas\EPubMeta;
+
+use DOMElement;
+
 class EPubDOMElement extends DOMElement
 {
     public $namespaces = [
