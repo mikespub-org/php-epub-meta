@@ -12,12 +12,19 @@ use DOMElement;
 
 class EPubDOMElement extends DOMElement
 {
+    /** @var array<string, string> */
     public $namespaces = [
         'n'   => 'urn:oasis:names:tc:opendocument:xmlns:container',
         'opf' => 'http://www.idpf.org/2007/opf',
         'dc'  => 'http://purl.org/dc/elements/1.1/',
     ];
 
+    /**
+     * Summary of __construct
+     * @param string $name
+     * @param string $value
+     * @param string $namespaceURI
+     */
     public function __construct($name, $value='', $namespaceURI='')
     {
         [$ns, $name] = $this->splitns($name);
@@ -32,6 +39,9 @@ class EPubDOMElement extends DOMElement
      * Create and append a new child
      *
      * Works with our epub namespaces and omits default namespaces
+     * @param string $name
+     * @param string $value
+     * @return \DOMNode|EPubDOMElement|bool
      */
     public function newChild($name, $value='')
     {
@@ -54,7 +64,7 @@ class EPubDOMElement extends DOMElement
      * Split given name in namespace prefix and local part
      *
      * @param  string $name
-     * @return array  (namespace, name)
+     * @return array<string>  (namespace, name)
      */
     public function splitns($name)
     {
@@ -67,6 +77,9 @@ class EPubDOMElement extends DOMElement
 
     /**
      * Simple EPub namespace aware attribute accessor
+     * @param string $attr
+     * @param string|false|null $value
+     * @return string|void
      */
     public function attr($attr, $value=null)
     {
@@ -112,6 +125,7 @@ class EPubDOMElement extends DOMElement
 
     /**
      * Remove this node from the DOM
+     * @return void
      */
     public function delete()
     {

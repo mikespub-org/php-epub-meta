@@ -20,21 +20,26 @@ use const SebLucas\TbsZip\TBSZIP_DOWNLOAD;
 class EPub
 {
     public const METADATA_FILE = 'META-INF/container.xml';
+    /** @var DOMDocument */
     public $xml; //FIXME: change to protected, later
+    /** @var DOMDocument */
     public $toc;
+    /** @var DOMDocument */
     public $nav;
+    /** @var EPubDOMXPath */
     protected $xpath;
+    /** @var EPubDOMXPath */
     protected $toc_xpath;
+    /** @var EPubDOMXPath */
     protected $nav_xpath;
-    protected $file;
-    protected $meta;
-    /**
-     * @var clsTbsZip|ZipFile
-     */
+    protected string $file;
+    protected string $meta;
+    /** @var clsTbsZip|ZipFile */
     protected $zip;
-    protected $coverpath='';
+    protected string $coverpath='';
+    /** @var mixed */
     protected $namespaces;
-    protected $imagetoadd='';
+    protected string $imagetoadd='';
 
     /**
      * Constructor
@@ -85,6 +90,11 @@ class EPub
         $this->xpath = new EPubDOMXPath($this->xml);
     }
 
+    /**
+     * Summary of initSpineComponent
+     * @throws \Exception
+     * @return void
+     */
     public function initSpineComponent()
     {
         $spine = $this->xpath->query('//opf:spine')->item(0);
@@ -123,6 +133,7 @@ class EPub
 
     /**
      * file name getter
+     * @return string
      */
     public function file()
     {
@@ -131,6 +142,7 @@ class EPub
 
     /**
      * Close the epub file
+     * @return void
      */
     public function close()
     {
@@ -141,6 +153,7 @@ class EPub
 
     /**
      * Remove iTunes files
+     * @return void
      */
     public function cleanITunesCrap()
     {
@@ -154,6 +167,7 @@ class EPub
 
     /**
      * Writes back all meta data changes
+     * @return void
      */
     public function save()
     {
@@ -163,6 +177,8 @@ class EPub
 
     /**
      * Get the updated epub
+     * @param mixed $file
+     * @return void
      */
     public function download($file=false)
     {
@@ -179,6 +195,7 @@ class EPub
 
     /**
      * Get the components list as an array
+     * @return array<mixed>
      */
     public function components()
     {
@@ -193,6 +210,8 @@ class EPub
 
     /**
      * Get the component content
+     * @param mixed $comp
+     * @return mixed
      */
     public function component($comp)
     {
@@ -206,6 +225,12 @@ class EPub
         return $data;
     }
 
+    /**
+     * Summary of getComponentName
+     * @param mixed $comp
+     * @param mixed $elementPath
+     * @return bool|string
+     */
     public function getComponentName($comp, $elementPath)
     {
         $path = $this->decodeComponentName($comp);
@@ -225,6 +250,8 @@ class EPub
 
     /**
      * Encode the component name (to replace / and -)
+     * @param mixed $src
+     * @return string
      */
     private function encodeComponentName($src)
     {
@@ -237,6 +264,8 @@ class EPub
 
     /**
      * Decode the component name (to replace / and -)
+     * @param mixed $src
+     * @return string
      */
     private function decodeComponentName($src)
     {
@@ -250,6 +279,8 @@ class EPub
 
     /**
      * Get the component content type
+     * @param mixed $comp
+     * @return string
      */
     public function componentContentType($comp)
     {
@@ -271,6 +302,8 @@ class EPub
     /**
      * EPUB 2 navigation control file (NCX format)
      * See https://idpf.org/epub/20/spec/OPF_2.0_latest.htm#Section2.4.1
+     * @param mixed $node
+     * @return array<string, string>
      */
     private function getNavPointDetail($node)
     {
@@ -283,6 +316,8 @@ class EPub
     /**
      * EPUB 3 navigation document (toc nav element)
      * See https://www.w3.org/TR/epub-33/#sec-nav-toc
+     * @param mixed $node
+     * @return array<string, string>
      */
     private function getNavTocListItem($node)
     {
@@ -296,6 +331,7 @@ class EPub
      * Get the Epub content (TOC) as an array
      *
      * For each chapter there is a "title" and a "src"
+     * @return mixed
      */
     public function contents()
     {
@@ -334,6 +370,7 @@ class EPub
      * )
      *
      * @param mixed $authors
+     * @return mixed
      */
     public function Authors($authors=false)
     {
@@ -356,6 +393,7 @@ class EPub
             }
 
             // add new nodes
+            /** @var EPubDOMElement $parent */
             $parent = $this->xpath->query('//opf:metadata')->item(0);
             foreach ($authors as $as => $name) {
                 if (is_int($as)) {
@@ -397,6 +435,7 @@ class EPub
      * Set or get the book title
      *
      * @param string|bool $title
+     * @return mixed
      */
     public function Title($title=false)
     {
@@ -418,6 +457,7 @@ class EPub
      * Set or get the book' publisher info
      *
      * @param string|bool $publisher
+     * @return mixed
      */
     public function Publisher($publisher=false)
     {
@@ -428,6 +468,7 @@ class EPub
      * Set or get the book's copyright info
      *
      * @param string|bool $rights
+     * @return mixed
      */
     public function Copyright($rights=false)
     {
@@ -438,6 +479,7 @@ class EPub
      * Set or get the book's description
      *
      * @param string|bool $description
+     * @return mixed
      */
     public function Description($description=false)
     {
@@ -448,6 +490,7 @@ class EPub
      * Set or get the book's Unique Identifier
      *
      * @param string|bool $uuid Unique identifier
+     * @return mixed
      */
     public function Uuid($uuid = false)
     {
@@ -467,6 +510,7 @@ class EPub
      * Set or get the book's creation date
      *
      * @param string|bool $date Date eg: 2012-05-19T12:54:25Z
+     * @return mixed
      */
     public function CreationDate($date = false)
     {
@@ -479,6 +523,7 @@ class EPub
      * Set or get the book's modification date
      *
      * @param string|bool $date Date eg: 2012-05-19T12:54:25Z
+     * @return mixed
      */
     public function ModificationDate($date = false)
     {
@@ -491,6 +536,7 @@ class EPub
      * Set or get the book's URI
      *
      * @param string|bool $uri URI
+     * @return mixed
      */
     public function Uri($uri = false)
     {
@@ -503,6 +549,7 @@ class EPub
      * Set or get the book's ISBN number
      *
      * @param string|bool $isbn
+     * @return mixed
      */
     public function ISBN($isbn=false)
     {
@@ -513,6 +560,7 @@ class EPub
      * Set or get the Google Books ID
      *
      * @param string|bool $google
+     * @return mixed
      */
     public function Google($google=false)
     {
@@ -523,6 +571,7 @@ class EPub
      * Set or get the Amazon ID of the book
      *
      * @param string|bool $amazon
+     * @return mixed
      */
     public function Amazon($amazon=false)
     {
@@ -533,6 +582,7 @@ class EPub
      * Set or get the Calibre UUID of the book
      *
      * @param string|bool $uuid
+     * @return mixed
      */
     public function Calibre($uuid=false)
     {
@@ -543,6 +593,7 @@ class EPub
      * Set or get the Serie of the book
      *
      * @param string|bool $serie
+     * @return mixed
      */
     public function Serie($serie=false)
     {
@@ -553,6 +604,7 @@ class EPub
      * Set or get the Serie Index of the book
      *
      * @param string|bool $serieIndex
+     * @return mixed
      */
     public function SerieIndex($serieIndex=false)
     {
@@ -565,7 +617,8 @@ class EPub
      * Subject should be given as array, but a comma separated string will also
      * be accepted.
      *
-     * @param array|string|bool $subjects
+     * @param array<string>|string|bool $subjects
+     * @return array<mixed>
      */
     public function Subjects($subjects=false)
     {
@@ -622,7 +675,7 @@ class EPub
      *
      * @param  string|bool $path local filesystem path to a new cover image
      * @param  string|bool $mime mime type of the given file
-     * @return array
+     * @return array<mixed>
      */
     public function Cover($path=false, $mime=false)
     {
@@ -641,12 +694,14 @@ class EPub
 
             if ($path) {
                 // add pointer
+                /** @var EPubDOMElement $parent */
                 $parent = $this->xpath->query('//opf:metadata')->item(0);
                 $node = $parent->newChild('opf:meta');
                 $node->attr('opf:name', 'cover');
                 $node->attr('opf:content', 'php-epub-meta-cover');
 
                 // add manifest
+                /** @var EPubDOMElement $parent */
                 $parent = $this->xpath->query('//opf:manifest')->item(0);
                 $node = $parent->newChild('opf:item');
                 $node->attr('id', 'php-epub-meta-cover');
@@ -692,6 +747,10 @@ class EPub
         ];
     }
 
+    /**
+     * Summary of getCoverItem
+     * @return mixed
+     */
     public function getCoverItem()
     {
         $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
@@ -712,6 +771,13 @@ class EPub
         return $nodes->item(0);
     }
 
+    /**
+     * Summary of Combine
+     * @param mixed $a
+     * @param mixed $b
+     * @throws \InvalidArgumentException
+     * @return string
+     */
     public function Combine($a, $b)
     {
         $isAbsolute = false;
@@ -750,6 +816,12 @@ class EPub
         }
     }
 
+    /**
+     * Summary of getFullPath
+     * @param mixed $file
+     * @param mixed $context
+     * @return string
+     */
     private function getFullPath($file, $context = null)
     {
         $path = dirname('/' . $this->meta) . '/' . $file;
@@ -762,6 +834,10 @@ class EPub
         return $path;
     }
 
+    /**
+     * Summary of updateForKepub
+     * @return void
+     */
     public function updateForKepub()
     {
         $item = $this->getCoverItem();
@@ -770,6 +846,12 @@ class EPub
         }
     }
 
+    /**
+     * Summary of Cover2
+     * @param mixed $path
+     * @param mixed $mime
+     * @return array<mixed>|void
+     */
     public function Cover2($path=false, $mime=false)
     {
         $hascover = true;
@@ -815,6 +897,7 @@ class EPub
      * @param string|bool $att    Attribute name
      * @param string|bool $aval   Attribute value
      * @param string|bool $datt   Destination attribute
+     * @return string|void
      */
     protected function getset($item, $value=false, $att=false, $aval=false, $datt=false)
     {
@@ -848,8 +931,10 @@ class EPub
                 }
                 // readd them
                 if ($value) {
+                    /** @var EPubDOMElement $parent */
                     $parent = $this->xpath->query('//opf:metadata')->item(0);
 
+                    /** @var EPubDOMElement $node */
                     $node = $parent->newChild($item);
                     if ($att) {
                         $node->attr($att, $aval);
@@ -880,6 +965,7 @@ class EPub
 
     /**
      * Return a not found response for Cover()
+     * @return array<string, mixed>
      */
     protected function no_cover()
     {
@@ -895,6 +981,7 @@ class EPub
      *
      * I had to rely on this because otherwise xpath failed to find the newly
      * added nodes
+     * @return void
      */
     protected function reparse()
     {

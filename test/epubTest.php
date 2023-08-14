@@ -8,7 +8,7 @@ include_once(dirname(dirname(__DIR__)) . '/tbszip/tbszip.php');
 
 class EPubTest extends TestCase
 {
-    protected $epub;
+    protected EPub $epub;
 
     protected function setUp(): void
     {
@@ -30,7 +30,7 @@ class EPubTest extends TestCase
         unlink(realpath(__DIR__) . '/test.copy.epub');
     }
 
-    public function testAuthors()
+    public function testAuthors(): void
     {
         // read curent value
         $this->assertEquals(
@@ -94,7 +94,7 @@ class EPubTest extends TestCase
         );
     }
 
-    public function testTitle()
+    public function testTitle(): void
     {
         // get current value
         $this->assertEquals(
@@ -127,7 +127,7 @@ class EPubTest extends TestCase
         );
     }
 
-    public function testSubject()
+    public function testSubject(): void
     {
         // get current values
         $this->assertEquals(
