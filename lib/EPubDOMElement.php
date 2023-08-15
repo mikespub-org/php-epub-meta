@@ -41,7 +41,7 @@ class EPubDOMElement extends DOMElement
      * Works with our epub namespaces and omits default namespaces
      * @param string $name
      * @param string $value
-     * @return \DOMNode|EPubDOMElement|bool
+     * @return EPubDOMElement|bool
      */
     public function newChild($name, $value='')
     {
@@ -57,7 +57,9 @@ class EPubDOMElement extends DOMElement
 
         // this doesn't call the construcor: $node = $this->ownerDocument->createElement($name,$value);
         $node = new EPubDOMElement($name, $value, $nsuri);
-        return $this->appendChild($node);
+        /** @var EPubDOMElement */
+        $node = $this->appendChild($node);
+        return $node;
     }
 
     /**

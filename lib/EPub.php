@@ -4,6 +4,7 @@
  *
  * @author Andreas Gohr <andi@splitbrain.org>
  * @author Sébastien Lucas <sebastien@slucas.fr>
+ * @author Simon Schrape <simon@epubli.com> © 2015
  */
 
 namespace SebLucas\EPubMeta;
@@ -11,6 +12,7 @@ namespace SebLucas\EPubMeta;
 use SebLucas\TbsZip\clsTbsZip;
 use Marsender\EPubLoader\ZipFile;
 use DOMDocument;
+use DOMNodeList;
 use Exception;
 use InvalidArgumentException;
 use ZipArchive;
@@ -50,6 +52,12 @@ class EPub
      */
     public function __construct($file, $zipClass = clsTbsZip::class)
     {
+        if (!is_file($file)) {
+            throw new Exception("Epub file does not exist!");
+        }
+        if (filesize($file) <= 0) {
+            throw new Exception("Epub file is empty!");
+        }
         // open file
         $this->file = $file;
         $this->zip = new $zipClass();
@@ -71,8 +79,7 @@ class EPub
         $xml->loadXML($data);
         $xpath = new EPubDOMXPath($xml);
         $nodes = $xpath->query('//n:rootfiles/n:rootfile[@media-type="application/oebps-package+xml"]');
-        // @checkme shouldn't this be getAttribute() instead?
-        $this->meta = $nodes->item(0)->attr('full-path');
+        $this->meta = $this->getAttr($nodes, 'full-path');
 
         // load metadata
         if (!$this->zip->FileExists($this->meta)) {
@@ -97,10 +104,11 @@ class EPub
      */
     public function initSpineComponent()
     {
-        $spine = $this->xpath->query('//opf:spine')->item(0);
-        $tocid = $spine->getAttribute('toc');
+        $nodes = $this->xpath->query('//opf:spine');
+        $tocid = $this->getAttr($nodes, 'toc');
         if (empty($tocid)) {
-            $navhref = $this->xpath->query('//opf:manifest/opf:item[@properties="nav"]')->item(0)->attr('href');
+            $nodes = $this->xpath->query('//opf:manifest/opf:item[@properties="nav"]');
+            $navhref = $this->getAttr($nodes, 'href');
             $navpath = $this->getFullPath($navhref);
             // read epub nav doc
             if (!$this->zip->FileExists($navpath)) {
@@ -115,7 +123,8 @@ class EPub
             $this->nav_xpath->registerNamespace('x', $rootNamespace);
             return;
         }
-        $tochref = $this->xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]')->item(0)->attr('href');
+        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]');
+        $tochref = $this->getAttr($nodes, 'href');
         $tocpath = $this->getFullPath($tochref);
         // read epub toc
         if (!$this->zip->FileExists($tocpath)) {
@@ -202,8 +211,11 @@ class EPub
         $spine = [];
         $nodes = $this->xpath->query('//opf:spine/opf:itemref');
         foreach ($nodes as $node) {
+            /** @var EPubDOMElement $node */
             $idref =  $node->getAttribute('idref');
-            $spine[] = $this->encodeComponentName($this->xpath->query('//opf:manifest/opf:item[@id="' . $idref . '"]')->item(0)->getAttribute('href'));
+            /** @var EPubDOMElement $item */
+            $item = $this->xpath->query('//opf:manifest/opf:item[@id="' . $idref . '"]')->item(0);
+            $spine[] = $this->encodeComponentName($item->getAttribute('href'));
         }
         return $spine;
     }
@@ -285,16 +297,16 @@ class EPub
     public function componentContentType($comp)
     {
         $comp = $this->decodeComponentName($comp);
-        $item = $this->xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]')->item(0);
-        if ($item) {
-            return $item->getAttribute('media-type');
+        $nodes = $this->xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]');
+        if ($nodes->length) {
+            return $this->getAttr($nodes, 'media-type');
         }
 
         // I had at least one book containing %20 instead of spaces in the opf file
         $comp = str_replace(' ', '%20', $comp);
-        $item = $this->xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]')->item(0);
-        if ($item) {
-            return $item->getAttribute('media-type');
+        $nodes = $this->xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]');
+        if ($nodes->length) {
+            return $this->getAttr($nodes, 'media-type');
         }
         return 'application/octet-stream';
     }
@@ -308,7 +320,8 @@ class EPub
     private function getNavPointDetail($node)
     {
         $title = $this->toc_xpath->query('x:navLabel/x:text', $node)->item(0)->nodeValue;
-        $src = $this->toc_xpath->query('x:content', $node)->item(0)->attr('src');
+        $nodes = $this->toc_xpath->query('x:content', $node);
+        $src = $this->getAttr($nodes, 'src');
         $src = $this->encodeComponentName($src);
         return ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
     }
@@ -321,8 +334,9 @@ class EPub
      */
     private function getNavTocListItem($node)
     {
-        $title = $this->nav_xpath->query('x:a', $node)->item(0)->nodeValue;
-        $src = $this->nav_xpath->query('x:a', $node)->item(0)->attr('href');
+        $nodes = $this->nav_xpath->query('x:a', $node);
+        $title = $nodes->item(0)->nodeValue;
+        $src = $this->getAttr($nodes, 'href');
         $src = $this->encodeComponentName($src);
         return ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
     }
@@ -358,6 +372,22 @@ class EPub
 
     /**
      * Get or set the book author(s)
+     * @param mixed $authors
+     * @return mixed
+     */
+    public function Authors($authors=false)
+    {
+        // set new data
+        if ($authors !== false) {
+            $this->setAuthors($authors);
+        }
+
+        // read current data
+        return $this->getAuthors();
+    }
+
+    /**
+     * Set the book author(s)
      *
      * Authors should be given with a "file-as" and a real name. The file as
      * is used for sorting in e-readers.
@@ -370,44 +400,45 @@ class EPub
      * )
      *
      * @param mixed $authors
-     * @return mixed
+     * @return void
      */
-    public function Authors($authors=false)
+    public function setAuthors($authors)
     {
-        // set new data
-        if ($authors !== false) {
-            // Author where given as a comma separated list
-            if (is_string($authors)) {
-                if ($authors == '') {
-                    $authors = [];
-                } else {
-                    $authors = explode(',', $authors);
-                    $authors = array_map('trim', $authors);
-                }
+        // Author where given as a comma separated list
+        if (is_string($authors)) {
+            if ($authors == '') {
+                $authors = [];
+            } else {
+                $authors = explode(',', $authors);
+                $authors = array_map('trim', $authors);
             }
-
-            // delete existing nodes
-            $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
-            foreach ($nodes as $node) {
-                $node->delete();
-            }
-
-            // add new nodes
-            /** @var EPubDOMElement $parent */
-            $parent = $this->xpath->query('//opf:metadata')->item(0);
-            foreach ($authors as $as => $name) {
-                if (is_int($as)) {
-                    $as = $name; //numeric array given
-                }
-                $node = $parent->newChild('dc:creator', $name);
-                $node->attr('opf:role', 'aut');
-                $node->attr('opf:file-as', $as);
-            }
-
-            $this->reparse();
         }
 
-        // read current data
+        // delete existing nodes
+        $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
+        $this->deleteNodes($nodes);
+
+        // add new nodes
+        /** @var EPubDOMElement $parent */
+        $parent = $this->xpath->query('//opf:metadata')->item(0);
+        foreach ($authors as $as => $name) {
+            if (is_int($as)) {
+                $as = $name; //numeric array given
+            }
+            $node = $parent->newChild('dc:creator', $name);
+            $node->attr('opf:role', 'aut');
+            $node->attr('opf:file-as', $as);
+        }
+
+        $this->reparse();
+    }
+
+    /**
+     * Get the book author(s)
+     * @return array<string>
+     */
+    public function getAuthors()
+    {
         $rolefix = false;
         $authors = [];
         $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
@@ -417,6 +448,7 @@ class EPub
             $rolefix = true;
         }
         foreach ($nodes as $node) {
+            /** @var EPubDOMElement $node */
             $name = $node->nodeValue;
             $as   = $node->attr('opf:file-as');
             if (!$as) {
@@ -499,7 +531,7 @@ class EPub
             $error = sprintf('Cannot find ebook identifier');
             throw new Exception($error);
         }
-        $identifier = $nodes->item(0)->attr('unique-identifier');
+        $identifier = $this->getAttr($nodes, 'unique-identifier');
 
         $res = $this->getset('dc:identifier', $uuid, 'id', $identifier);
 
@@ -624,31 +656,52 @@ class EPub
     {
         // setter
         if ($subjects !== false) {
-            if (is_string($subjects)) {
-                if ($subjects === '') {
-                    $subjects = [];
-                } else {
-                    $subjects = explode(',', $subjects);
-                    $subjects = array_map('trim', $subjects);
-                }
-            }
-
-            // delete previous
-            $nodes = $this->xpath->query('//opf:metadata/dc:subject');
-            foreach ($nodes as $node) {
-                $node->delete();
-            }
-            // add new ones
-            $parent = $this->xpath->query('//opf:metadata')->item(0);
-            foreach ($subjects as $subj) {
-                $node = $this->xml->createElement('dc:subject', htmlspecialchars($subj));
-                $node = $parent->appendChild($node);
-            }
-
-            $this->reparse();
+            $this->setSubjects($subjects);
         }
 
         //getter
+        return $this->getSubjects();
+    }
+
+    /**
+     * Set the book's subjects (aka. tags)
+     *
+     * Subject should be given as array, but a comma separated string will also
+     * be accepted.
+     *
+     * @param array<string>|string $subjects
+     * @return void
+     */
+    public function setSubjects($subjects)
+    {
+        if (is_string($subjects)) {
+            if ($subjects === '') {
+                $subjects = [];
+            } else {
+                $subjects = explode(',', $subjects);
+                $subjects = array_map('trim', $subjects);
+            }
+        }
+
+        // delete previous
+        $nodes = $this->xpath->query('//opf:metadata/dc:subject');
+        $this->deleteNodes($nodes);
+        // add new ones
+        $parent = $this->xpath->query('//opf:metadata')->item(0);
+        foreach ($subjects as $subj) {
+            $node = $this->xml->createElement('dc:subject', htmlspecialchars($subj));
+            $node = $parent->appendChild($node);
+        }
+
+        $this->reparse();
+    }
+
+    /**
+     * Get the book's subjects (aka. tags)
+     * @return array<mixed>
+     */
+    public function getSubjects()
+    {
         $subjects = [];
         $nodes = $this->xpath->query('//opf:metadata/dc:subject');
         foreach ($nodes as $node) {
@@ -683,14 +736,10 @@ class EPub
         if ($path !== false) {
             // remove current pointer
             $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
-            foreach ($nodes as $node) {
-                $node->delete();
-            }
+            $this->deleteNodes($nodes);
             // remove previous manifest entries if they where made by us
             $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="php-epub-meta-cover"]');
-            foreach ($nodes as $node) {
-                $node->delete();
-            }
+            $this->deleteNodes($nodes);
 
             if ($path) {
                 // add pointer
@@ -720,7 +769,7 @@ class EPub
         if (!$nodes->length) {
             return $this->no_cover();
         }
-        $coverid = (string) $nodes->item(0)->attr('opf:content');
+        $coverid = (string) $this->getAttr($nodes, 'opf:content');
         if (!$coverid) {
             return $this->no_cover();
         }
@@ -729,8 +778,8 @@ class EPub
         if (!$nodes->length) {
             return $this->no_cover();
         }
-        $mime = $nodes->item(0)->attr('opf:media-type');
-        $path = $nodes->item(0)->attr('opf:href');
+        $mime = $this->getAttr($nodes, 'opf:media-type');
+        $path = $this->getAttr($nodes, 'opf:href');
         $path = dirname('/' . $this->meta) . '/' . $path; // image path is relative to meta file
         $path = ltrim($path, '/');
 
@@ -749,7 +798,7 @@ class EPub
 
     /**
      * Summary of getCoverItem
-     * @return mixed
+     * @return EPubDOMElement|null
      */
     public function getCoverItem()
     {
@@ -758,7 +807,7 @@ class EPub
             return null;
         }
 
-        $coverid = (string)$nodes->item(0)->attr('opf:content');
+        $coverid = (string) $this->getAttr($nodes, 'opf:content');
         if (!$coverid) {
             return null;
         }
@@ -768,7 +817,9 @@ class EPub
             return null;
         }
 
-        return $nodes->item(0);
+        /** @var EPubDOMElement $node */
+        $node = $nodes->item(0);
+        return $node;
     }
 
     /**
@@ -888,6 +939,30 @@ class EPub
     }
 
     /**
+     * Summary of getAttr
+     * @param DOMNodeList<EPubDOMElement> $nodes list of EPubDOMElement items
+     * @param string $att Attribute name
+     * @return string
+     */
+    protected function getAttr($nodes, $att)
+    {
+        $node = $nodes->item(0);
+        return $node->attr($att);
+    }
+
+    /**
+     * Summary of deleteNodes
+     * @param DOMNodeList<EPubDOMElement> $nodes list of EPubDOMElement items
+     * @return void
+     */
+    protected function deleteNodes($nodes)
+    {
+        foreach ($nodes as $node) {
+            $node->delete();
+        }
+    }
+
+    /**
      * A simple getter/setter for simple meta attributes
      *
      * It should only be used for attributes that are expected to be unique
@@ -895,7 +970,7 @@ class EPub
      * @param string $item   XML node to set/get
      * @param string|bool $value  New node value
      * @param string|bool $att    Attribute name
-     * @param string|bool $aval   Attribute value
+     * @param string|bool|array<mixed> $aval   Attribute value
      * @param string|bool $datt   Destination attribute
      * @return string|void
      */
@@ -904,7 +979,13 @@ class EPub
         // construct xpath
         $xpath = '//opf:metadata/' . $item;
         if ($att) {
-            $xpath .= '[@' . $att . '="' . $aval . '"]';
+            if (is_array($aval)) {
+                $xpath .= '[@' . $att . '="';
+                $xpath .= implode("\" or @$att=\"", $aval);
+                $xpath .= '"]';
+            } else {
+                $xpath .= '[@' . $att . '="' . $aval . '"]';
+            }
         }
 
         // set value
@@ -912,29 +993,28 @@ class EPub
             $value = htmlspecialchars($value);
             $nodes = $this->xpath->query($xpath);
             if ($nodes->length == 1) {
+                /** @var EPubDOMElement $node */
+                $node = $nodes->item(0);
                 if ($value === '') {
                     // the user want's to empty this value -> delete the node
-                    $nodes->item(0)->delete();
+                    $node->delete();
                 } else {
                     // replace value
                     if ($datt) {
-                        $nodes->item(0)->attr($datt, $value);
+                        $node->attr($datt, $value);
                     } else {
-                        $nodes->item(0)->nodeValue = $value;
+                        $node->nodeValue = $value;
                     }
                 }
             } else {
                 // if there are multiple matching nodes for some reason delete
                 // them. we'll replace them all with our own single one
-                foreach ($nodes as $n) {
-                    $n->delete();
-                }
+                $this->deleteNodes($nodes);
                 // readd them
                 if ($value) {
                     /** @var EPubDOMElement $parent */
                     $parent = $this->xpath->query('//opf:metadata')->item(0);
 
-                    /** @var EPubDOMElement $node */
                     $node = $parent->newChild($item);
                     if ($att) {
                         $node->attr($att, $aval);
@@ -953,10 +1033,12 @@ class EPub
         // get value
         $nodes = $this->xpath->query($xpath);
         if ($nodes->length) {
+            /** @var EPubDOMElement $node */
+            $node = $nodes->item(0);
             if ($datt) {
-                return $nodes->item(0)->attr($datt);
+                return $node->attr($datt);
             } else {
-                return $nodes->item(0)->nodeValue;
+                return $node->nodeValue;
             }
         } else {
             return '';
@@ -987,5 +1069,289 @@ class EPub
     {
         $this->xml->loadXML($this->xml->saveXML());
         $this->xpath = new EPubDOMXPath($this->xml);
+    }
+
+    /** based on slightly more updated version at https://github.com/epubli/epub */
+
+    /**
+     * A simple setter for simple meta attributes
+     *
+     * It should only be used for attributes that are expected to be unique
+     *
+     * @param string $item XML node to set
+     * @param string $value New node value
+     * @param bool|string $attribute Attribute name
+     * @param bool|string $attributeValue Attribute value
+     * @param bool $caseSensitive
+     * @return mixed
+     */
+    private function setMeta($item, $value, $attribute = false, $attributeValue = false, $caseSensitive = true)
+    {
+        /**
+        if ($attributeValue !== false && !$caseSensitive) {
+            $attval = is_array($attributeValue) ? $attributeValue : [ $attributeValue ];
+            $vallist = [];
+            foreach ($attval as $val) {
+                $vallist[] = strtoupper($val);
+                $vallist[] = strtolower($val);
+            }
+            $attributeValue = $vallist;
+        }
+         */
+        return $this->getset($item, $value, $attribute, $attributeValue);
+    }
+
+    /**
+     * A simple getter for simple meta attributes
+     *
+     * It should only be used for attributes that are expected to be unique
+     *
+     * @param string $item XML node to get
+     * @param bool|string $att Attribute name
+     * @param bool|string $aval Attribute value
+     * @param bool $caseSensitive
+     * @return string
+     */
+    private function getMeta($item, $att = false, $aval = false, $caseSensitive = true)
+    {
+        /**
+        if ($aval !== false && !$caseSensitive) {
+            $attval = is_array($aval) ? $aval : [ $aval ];
+            $vallist = [];
+            foreach ($attval as $val) {
+                $vallist[] = strtoupper($val);
+                $vallist[] = strtolower($val);
+            }
+            $aval = $vallist;
+        }
+         */
+        return $this->getset($item, false, $att, $aval);
+    }
+
+    /**
+     * Set the book title
+     *
+     * @param string $title
+     * @return mixed
+     */
+    public function setTitle($title)
+    {
+        return $this->getset('dc:title', $title);
+    }
+
+    /**
+     * Get the book title
+     *
+     * @return mixed
+     */
+    public function getTitle()
+    {
+        return $this->getset('dc:title');
+    }
+
+    /**
+     * Set the book's language
+     *
+     * @param string $lang
+     * @return mixed
+     */
+    public function setLanguage($lang)
+    {
+        return $this->getset('dc:language', $lang);
+    }
+
+    /**
+     * Get the book's language
+     *
+     * @return mixed
+     */
+    public function getLanguage()
+    {
+        return $this->getset('dc:language');
+    }
+
+    /**
+     * Set the book's publisher info
+     *
+     * @param string $publisher
+     * @return void
+     */
+    public function setPublisher($publisher)
+    {
+        $this->setMeta('dc:publisher', $publisher);
+    }
+
+    /**
+     * Get the book's publisher info
+     *
+     * @return string
+     */
+    public function getPublisher()
+    {
+        return $this->getMeta('dc:publisher');
+    }
+
+    /**
+     * Set the book's copyright info
+     *
+     * @param string $rights
+     * @return void
+     */
+    public function setCopyright($rights)
+    {
+        $this->setMeta('dc:rights', $rights);
+    }
+
+    /**
+     * Get the book's copyright info
+     *
+     * @return string
+     */
+    public function getCopyright()
+    {
+        return $this->getMeta('dc:rights');
+    }
+
+    /**
+     * Set the book's description
+     *
+     * @param string $description
+     * @return void
+     */
+    public function setDescription($description)
+    {
+        $this->setMeta('dc:description', $description);
+    }
+
+    /**
+     * Get the book's description
+     *
+     * @return string
+     */
+    public function getDescription()
+    {
+        return $this->getMeta('dc:description');
+    }
+
+    /**
+     * Set an identifier in the package file’s meta section.
+     *
+     * @param string|array<string> $idScheme The identifier’s scheme. If an array is given
+     * all matching identifiers are replaced by one with the first value as scheme.
+     * @param string $value
+     * @param bool $caseSensitive
+     * @return void
+     */
+    public function setIdentifier($idScheme, $value, $caseSensitive = false)
+    {
+        $this->setMeta('dc:identifier', $value, 'opf:scheme', $idScheme, $caseSensitive);
+    }
+
+    /**
+     * Set an identifier from the package file’s meta section.
+     *
+     * @param string|array<string> $idScheme The identifier’s scheme. If an array is given
+     * the scheme can be any of its values.
+     * @param bool $caseSensitive - @todo changed to true here
+     * @return string The value of the first matching element.
+     */
+    public function getIdentifier($idScheme, $caseSensitive = true)
+    {
+        return $this->getMeta('dc:identifier', 'opf:scheme', $idScheme, $caseSensitive);
+    }
+
+    /**
+     * Set the book's unique identifier
+     *
+     * @param string $value
+     * @return void
+     */
+    public function setUniqueIdentifier($value)
+    {
+        $idRef = $this->xpath->document->documentElement->getAttribute('unique-identifier');
+        $this->setMeta('dc:identifier', $value, 'id', $idRef);
+    }
+
+    /**
+     * Get the book's unique identifier
+     *
+     * @param bool $normalize
+     * @return string
+     */
+    public function getUniqueIdentifier($normalize = false)
+    {
+        $idRef = $this->xpath->document->documentElement->getAttribute('unique-identifier');
+        $idVal = $this->getMeta('dc:identifier', 'id', $idRef);
+        if ($normalize) {
+            $idVal = strtolower($idVal);
+            $idVal = str_replace('urn:uuid:' ,'' ,$idVal);
+        }
+
+        return $idVal;
+    }
+
+    /**
+     * Set the book's UUID - @todo pick one + case sensitive
+     *
+     * @param string $uuid
+     * @return void
+     */
+    public function setUuid($uuid)
+    {
+        //$this->setIdentifier(['UUID', 'uuid', 'URN', 'urn'], $uuid);
+        $this->setIdentifier('URN', $uuid);
+    }
+
+    /**
+     * Get the book's UUID - @todo pick one + case sensitive
+     *
+     * @return string
+     */
+    public function getUuid()
+    {
+        //return $this->getIdentifier(['uuid', 'urn']);
+        return $this->getIdentifier(['UUID', 'URN']);
+    }
+
+    /**
+     * Set the book's URI
+     *
+     * @param string $uri
+     * @return void
+     */
+    public function setUri($uri)
+    {
+        $this->setIdentifier('URI', $uri);
+    }
+
+    /**
+     * Get the book's URI
+     *
+     * @return string
+     */
+    public function getUri()
+    {
+        return $this->getIdentifier('URI');
+    }
+
+    /**
+     * Set the book's ISBN
+     *
+     * @param string $isbn
+     * @return void
+     */
+    public function setIsbn($isbn)
+    {
+        $this->setIdentifier('ISBN', $isbn);
+    }
+
+    /**
+     * Get the book's ISBN
+     *
+     * @return string
+     */
+    public function getIsbn()
+    {
+        return $this->getIdentifier('ISBN');
     }
 }
