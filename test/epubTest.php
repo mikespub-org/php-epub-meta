@@ -5,6 +5,8 @@ use SebLucas\EPubMeta\EPub;
 
 // remove seblucas/tbszip from composer.json
 include_once(dirname(dirname(__DIR__)) . '/tbszip/tbszip.php');
+// remove marsender/epub-loader from composer.json
+include_once(dirname(dirname(__DIR__)) . '/epub-loader/ZipFile.class.php');
 
 /**
  * Test for EPUB library
@@ -15,12 +17,12 @@ include_once(dirname(dirname(__DIR__)) . '/tbszip/tbszip.php');
  */
 class EPubTest extends TestCase
 {
-    const TEST_EPUB = __DIR__ . '/data/test.epub';
-    const TEST_EPUB_COPY = __DIR__ . '/data/test.copy.epub';
-    const TEST_IMAGE = __DIR__ . '/data/test.jpg';
-    const EMPTY_ZIP = __DIR__ . '/data/empty.zip';
-    const BROKEN_ZIP = __DIR__ . '/data/broken.zip';
- 
+    public const TEST_EPUB = __DIR__ . '/data/test.epub';
+    public const TEST_EPUB_COPY = __DIR__ . '/data/test.copy.epub';
+    public const TEST_IMAGE = __DIR__ . '/data/test.jpg';
+    public const EMPTY_ZIP = __DIR__ . '/data/empty.zip';
+    public const BROKEN_ZIP = __DIR__ . '/data/broken.zip';
+
     protected EPub $epub;
 
     protected function setUp(): void
@@ -190,13 +192,16 @@ class EPubTest extends TestCase
     }
 
 
-    /*public function testOldCover(): void
+    public function testOldCover(): void
     {
         // read current cover
-        $cover = $this->epub->Cover2();
-        $this->assertEquals($cover['mime'],'image/png');
-        $this->assertEquals($cover['found'],'OPS/images/cover.png');
+        $cover = $this->epub->Cover();
+        $this->assertEquals($cover['mime'], 'image/png');
+        $this->assertEquals($cover['found'], 'OPS/images/cover.png');
         $this->assertEquals(strlen($cover['data']), 657911);
+
+        /**
+        $cover = $this->epub->Cover2();
 
         // // delete cover // Don't work anymore
         // $cover = $this->epub->Cover('');
@@ -205,35 +210,57 @@ class EPubTest extends TestCase
         // $this->assertEquals(strlen($cover['data']), 42);
 
         // // set new cover (will return a not-found as it's not yet saved)
-        $cover = $this->epub->Cover2(realpath( dirname( __FILE__ ) ) . '/test.jpg','image/jpeg');
+        $cover = $this->epub->Cover2(self::TEST_IMAGE,'image/jpeg');
         // $this->assertEquals($cover['mime'],'image/jpeg');
         // $this->assertEquals($cover['found'],'OPS/php-epub-meta-cover.img');
         // $this->assertEquals(strlen($cover['data']), 0);
 
         // save
         $this->epub->save();
-        //$this->epub = new EPub(realpath( dirname( __FILE__ ) ) . '/test.copy.epub');
+        //$this->epub = new EPub(self::TEST_EPUB_COPY);
 
         // read now changed cover
         $cover = $this->epub->Cover2();
         $this->assertEquals($cover['mime'],'image/jpeg');
         $this->assertEquals($cover['found'],'OPS/images/cover.png');
-        $this->assertEquals(strlen($cover['data']), filesize(realpath( dirname( __FILE__ ) ) . '/test.jpg'));
-    }*/
+        $this->assertEquals(strlen($cover['data']), filesize(self::TEST_IMAGE));
+         */
+    }
+
+    public function testGetZipEntries(): void
+    {
+        $entries = $this->epub->getZipEntries();
+        $this->assertCount(49, $entries);
+        $this->assertArrayHasKey(EPub::METADATA_FILE, $entries);
+        $this->assertEquals(250, $entries[EPub::METADATA_FILE]['size']);
+
+        $count = $this->epub->getImageCount();
+        $this->assertEquals(3, $count);
+
+        $coverpath = $this->epub->getCoverPath();
+        $this->assertEquals('images/cover.png', $coverpath);
+
+        $size = $this->epub->getComponentSize($coverpath);
+        $this->assertEquals(657911, $size);
+    }
 
     public function testLoadNonZip(): void
     {
-        $this->expectException(Exception::class);
+        //$this->expectException(Exception::class);
         //$this->expectExceptionMessage('Failed to read EPUB file. Not a zip archive.');
-        $this->expectExceptionMessage('Failed to read epub file');
+        //$this->expectExceptionMessage('Failed to read epub file');
+        $this->expectException(ValueError::class);
+        $this->expectExceptionMessage('Invalid or uninitialized Zip object');
         new Epub(self::TEST_IMAGE);
     }
 
     public function testLoadBrokenZip(): void
     {
-        $this->expectException(Exception::class);
+        //$this->expectException(Exception::class);
         //$this->expectExceptionMessage('Failed to read EPUB file. Zip archive inconsistent.');
-        $this->expectExceptionMessage('Unable to find metadata.xml');
+        //$this->expectExceptionMessage('Unable to find metadata.xml');
+        $this->expectException(ValueError::class);
+        $this->expectExceptionMessage('Invalid or uninitialized Zip object');
         new Epub(self::BROKEN_ZIP);
     }
 
@@ -261,7 +288,8 @@ class EPubTest extends TestCase
     {
         $this->expectException(Exception::class);
         //$this->expectExceptionMessage('Failed to read from EPUB container: META-INF/container.xml');
-        $this->expectExceptionMessage('Failed to read epub file');
+        //$this->expectExceptionMessage('Failed to read epub file');
+        $this->expectExceptionMessage('Unable to find ' . EPub::METADATA_FILE);
         new Epub(self::EMPTY_ZIP);
     }
 
@@ -284,15 +312,15 @@ class EPubTest extends TestCase
         $this->assertEquals(['John Doe' => 'John Doe'], $this->epub->getAuthors());
 
         // set single value by indexed array
-        $this->epub->setAuthors(array('John Doe'));
+        $this->epub->setAuthors(['John Doe']);
         $this->assertEquals(['John Doe' => 'John Doe'], $this->epub->getAuthors());
 
         // remove value with array
-        $this->epub->setAuthors(array());
+        $this->epub->setAuthors([]);
         $this->assertEquals([], $this->epub->getAuthors());
 
         // set single value by associative array
-        $this->epub->setAuthors(array('Doe, John' => 'John Doe'));
+        $this->epub->setAuthors(['Doe, John' => 'John Doe']);
         $this->assertEquals(['Doe, John' => 'John Doe'], $this->epub->getAuthors());
 
         // set multi value by string
@@ -300,15 +328,15 @@ class EPubTest extends TestCase
         $this->assertEquals(['John Doe' => 'John Doe', 'Jane Smith' => 'Jane Smith'], $this->epub->getAuthors());
 
         // set multi value by indexed array
-        $this->epub->setAuthors(array('John Doe', 'Jane Smith'));
+        $this->epub->setAuthors(['John Doe', 'Jane Smith']);
         $this->assertEquals(['John Doe' => 'John Doe', 'Jane Smith' => 'Jane Smith'], $this->epub->getAuthors());
 
         // set multi value by associative  array
-        $this->epub->setAuthors(array('Doe, John' => 'John Doe', 'Smith, Jane' => 'Jane Smith'));
+        $this->epub->setAuthors(['Doe, John' => 'John Doe', 'Smith, Jane' => 'Jane Smith']);
         $this->assertEquals(['Doe, John' => 'John Doe', 'Smith, Jane' => 'Jane Smith'], $this->epub->getAuthors());
 
         // check escaping
-        $this->epub->setAuthors(array('Doe, John&nbsp;' => 'John Doe&nbsp;'));
+        $this->epub->setAuthors(['Doe, John&nbsp;' => 'John Doe&nbsp;']);
         $this->assertEquals(['Doe, John&nbsp;' => 'John Doe&nbsp;'], $this->epub->getAuthors());
     }
 
@@ -492,5 +520,27 @@ class EPubTest extends TestCase
         // check escaping
         $this->epub->setSubjects(['Fiction', 'Drama&nbsp;', 'Romance']);
         $this->assertEquals(['Fiction', 'Drama&nbsp;', 'Romance'], $this->epub->getSubjects());
+    }
+
+    public function testCover(): void
+    {
+        // read current cover
+        $cover = $this->epub->getCover();
+        $this->assertEquals(657911, strlen($cover));
+
+        /**
+        // change cover
+        $this->epub->setCover(self::TEST_IMAGE, 'image/jpeg');
+        $this->epub->save();
+
+        // read recently changed cover
+        $cover = $this->epub->getCover();
+        $this->assertEquals(filesize(self::TEST_IMAGE), strlen($cover));
+
+        // delete cover
+        $this->epub->clearCover();
+        $cover = $this->epub->getCover();
+        $this->assertNull($cover);
+         */
     }
 }

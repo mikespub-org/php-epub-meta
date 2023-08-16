@@ -8,34 +8,14 @@ use SebLucas\EPubMeta\Other;
 
 class OtherTest extends TestCase
 {
-    const TEST_IMAGE = __DIR__ . '/data/test.jpg';
-    const MARKUP_XML_1 = __DIR__ . '/data/markup.1.xml';
-    const MARKUP_XML_2 = __DIR__ . '/data/markup.2.xml';
-    const MARKUP_XML_3 = __DIR__ . '/data/markup.3.xml';
-    const MARKUP_XML_4 = __DIR__ . '/data/markup.4.xml';
-    const MARKUP_XML_5 = __DIR__ . '/data/markup.5.xml';
+    public const TEST_IMAGE = __DIR__ . '/data/test.jpg';
+    public const MARKUP_XML_1 = __DIR__ . '/data/markup.1.xml';
+    public const MARKUP_XML_2 = __DIR__ . '/data/markup.2.xml';
+    public const MARKUP_XML_3 = __DIR__ . '/data/markup.3.xml';
+    public const MARKUP_XML_4 = __DIR__ . '/data/markup.4.xml';
+    public const MARKUP_XML_5 = __DIR__ . '/data/markup.5.xml';
 
     protected Other $epub;
-
-    public function testCover(): void
-    {
-        // read current cover
-        $cover = $this->epub->getCover();
-        $this->assertEquals(657911, strlen($cover));
-
-        // change cover
-        $this->epub->setCover(self::TEST_IMAGE, 'image/jpeg');
-        $this->epub->save();
-
-        // read recently changed cover
-        $cover = $this->epub->getCover();
-        $this->assertEquals(filesize(self::TEST_IMAGE), strlen($cover));
-
-        // delete cover
-        $this->epub->clearCover();
-        $cover = $this->epub->getCover();
-        $this->assertNull($cover);
-    }
 
     /**
      * @throws Exception
