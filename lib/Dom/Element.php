@@ -99,6 +99,7 @@ class Element extends DOMElement
     /**
      * Split given name in namespace prefix and local part
      *
+     * @deprecated 1.5.0 use splitQualifiedName() instead
      * @param  string $name
      * @return array<string>  (namespace, name)
      */
@@ -113,6 +114,7 @@ class Element extends DOMElement
 
     /**
      * Simple EPub namespace aware attribute accessor
+     * @deprecated 1.5.0 use getAttrib(), setAttrib() or removeAttrib() instead
      * @param string $attr
      * @param string|false|null $value
      * @return string|void
