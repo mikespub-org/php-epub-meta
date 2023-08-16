@@ -544,11 +544,11 @@ class EPubTest extends TestCase
         $cover = $epub->getCover();
         $this->assertEquals(657911, strlen($cover));
 
-        /**
         // change cover
         $epub->setCover(self::TEST_IMAGE, 'image/jpeg');
         $epub->save();
 
+        $epub = new EPub(self::TEST_EPUB_COVER);
         // read recently changed cover
         $cover = $epub->getCover();
         $this->assertEquals(filesize(self::TEST_IMAGE), strlen($cover));
@@ -559,7 +559,6 @@ class EPubTest extends TestCase
         $this->assertNull($cover);
 
         $epub->close();
-         */
 
         unlink(self::TEST_EPUB_COVER);
     }

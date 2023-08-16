@@ -1464,7 +1464,9 @@ class EPub
         // remove any cover image file added by us
         if (isset($manifest[static::COVER_ID])) {
             $fullPath = $this->getFullPath(static::COVER_ID . '.img');
-            $this->zip->FileReplace($fullPath, false);
+            if (!$this->zip->FileReplace($fullPath, false)) {
+                throw new Exception('Unable to remove ' . $fullPath);
+            }
         }
 
         // remove metadata cover pointer
@@ -1514,7 +1516,9 @@ class EPub
 
         // add the cover image
         $fullPath = $this->getFullPath(static::COVER_ID . '.img');
-        $this->zip->FileAdd($fullPath, file_get_contents($path));
+        if (!$this->zip->FileAdd($fullPath, file_get_contents($path))) {
+            throw new Exception('Unable to add ' . $fullPath);
+        }
 
         $this->reparse();
     }
