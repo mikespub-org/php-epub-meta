@@ -86,6 +86,16 @@ class EPub
         }
 
         // read container data
+        $this->loadMetadata();
+    }
+
+    /**
+     * Summary of loadMetadata
+     * @throws \Exception
+     * @return void
+     */
+    public function loadMetadata()
+    {
         if (!$this->zip->FileExists(static::METADATA_FILE)) {
             throw new Exception('Unable to find ' . static::METADATA_FILE);
         }
@@ -1147,8 +1157,8 @@ class EPub
         $this->xpath = new EpubDomXPath($this->xml);
         // reset structural members
         $this->manifest = null;
-        //$this->spine = null;
-        //$this->toc = null;
+        $this->spine = null;
+        $this->tocnav = null;
     }
 
     /** based on slightly more updated version at https://github.com/epubli/epub */
@@ -1436,6 +1446,80 @@ class EPub
     }
 
     /**
+     * Remove the cover image
+     *
+     * If the actual image file was added by this library it will be removed. Otherwise only the
+     * reference to it is removed from the metadata, since the same image might be referenced
+     * by other parts of the EPUB file.
+     * @return void
+     */
+    public function clearCover()
+    {
+        if (!$this->hasCover()) {
+            return;
+        }
+
+        $manifest = $this->getManifest();
+
+        // remove any cover image file added by us
+        if (isset($manifest[static::COVER_ID])) {
+            $fullPath = $this->getFullPath(static::COVER_ID . '.img');
+            $this->zip->FileReplace($fullPath, false);
+        }
+
+        // remove metadata cover pointer
+        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+        static::deleteNodes($nodes);
+
+        // remove previous manifest entries if they where made by us
+        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="' . static::COVER_ID . '"]');
+        static::deleteNodes($nodes);
+
+        $this->reparse();
+    }
+
+    /**
+     * Set the cover image
+     *
+     * @param string $path local filesystem path to a new cover image
+     * @param string $mime mime type of the given file
+     * @return void
+     */
+    public function setCover($path, $mime)
+    {
+        if (!$path) {
+            throw new InvalidArgumentException('Parameter $path must not be empty!');
+        }
+
+        if (!is_readable($path)) {
+            throw new InvalidArgumentException("Cannot add $path as new cover image since that file is not readable!");
+        }
+
+        $this->clearCover();
+
+        // add metadata cover pointer
+        /** @var EpubDomElement $parent */
+        $parent = $this->xpath->query('//opf:metadata')->item(0);
+        $node = $parent->newChild('opf:meta');
+        $node->setAttrib('opf:name', 'cover');
+        $node->setAttrib('opf:content', static::COVER_ID);
+
+        // add manifest item
+        /** @var EpubDomElement $parent */
+        $parent = $this->xpath->query('//opf:manifest')->item(0);
+        $node = $parent->newChild('opf:item');
+        $node->setAttrib('id', static::COVER_ID);
+        $node->setAttrib('opf:href', static::COVER_ID . '.img');
+        $node->setAttrib('opf:media-type', $mime);
+
+        // add the cover image
+        $fullPath = $this->getFullPath(static::COVER_ID . '.img');
+        $this->zip->FileAdd($fullPath, file_get_contents($path));
+
+        $this->reparse();
+    }
+
+    /**
      * Get the cover image
      *
      * @return string|null The binary image data or null if no image exists.
@@ -1481,10 +1565,15 @@ class EPub
             $id = $item->getAttribute('id');
             $href = urldecode($item->getAttribute('href'));
             $fullPath = $this->getFullPath($href);
-            $handle = $this->zip->FileStream($fullPath);  // @todo this won't work with clsTbsZip - $this->zip->getStream($fullPath);
+            // this won't work with clsTbsZip - $this->zip->getStream($fullPath);
+            //$handle = $this->zip->FileStream($fullPath);
+            $callable = function () use ($fullPath): string|bool {
+                // Automatic binding of $this
+                return $this->zip->FileRead($fullPath);
+            };
             $size = $this->zipSizeMap[$fullPath] ?? 0;
             $mediaType = $item->getAttribute('media-type');
-            $this->manifest->createItem($id, $href, $handle, $size, $mediaType);
+            $this->manifest->createItem($id, $href, $callable, $size, $mediaType);
         }
 
         return $this->manifest;
@@ -1634,7 +1723,7 @@ class EPub
         $toc = $xpath->query('//x:nav[@epub:type="toc"]')->item(0);
         $navListNodes = $xpath->query('//x:ol/x:li', $toc);
         if ($navListNodes->length > 0) {
-        $this->loadNavList($navListNodes, $this->tocnav->getNavMap(), $xpath);
+            $this->loadNavList($navListNodes, $this->tocnav->getNavMap(), $xpath);
         }
 
         return $this->tocnav;
