@@ -297,7 +297,7 @@ class EPub
      * @param mixed $src
      * @return string
      */
-    private function encodeComponentName($src)
+    protected function encodeComponentName($src)
     {
         return str_replace(
             ['/', '-'],
@@ -311,7 +311,7 @@ class EPub
      * @param mixed $src
      * @return string
      */
-    private function decodeComponentName($src)
+    protected function decodeComponentName($src)
     {
         return str_replace(
             ['~SLASH~', '~DASH~'],
@@ -367,7 +367,7 @@ class EPub
      * @param mixed $node
      * @return array<string, string>
      */
-    private function getNavPointDetail($node)
+    protected function getNavPointDetail($node)
     {
         $title = $this->toc_xpath->query('x:navLabel/x:text', $node)->item(0)->nodeValue;
         $nodes = $this->toc_xpath->query('x:content', $node);
@@ -382,7 +382,7 @@ class EPub
      * @param mixed $node
      * @return array<string, string>
      */
-    private function getNavTocListItem($node)
+    protected function getNavTocListItem($node)
     {
         $nodes = $this->nav_xpath->query('x:a', $node);
         $title = $nodes->item(0)->nodeValue;
@@ -422,6 +422,7 @@ class EPub
 
     /**
      * Get or set the book author(s)
+     * @deprecated 1.5.0 use getAuthors() or setAuthors() instead
      * @param mixed $authors
      * @return mixed
      */
@@ -516,6 +517,7 @@ class EPub
     /**
      * Set or get the book title
      *
+     * @deprecated 1.5.0 use getTitle() or setTitle() instead
      * @param string|bool $title
      * @return mixed
      */
@@ -527,6 +529,7 @@ class EPub
     /**
      * Set or get the book's language
      *
+     * @deprecated 1.5.0 use getLanguage() or setLanguage() instead
      * @param string|bool $lang
      * @return mixed
      */
@@ -538,6 +541,7 @@ class EPub
     /**
      * Set or get the book' publisher info
      *
+     * @deprecated 1.5.0 use getPublisher() or setPublisher() instead
      * @param string|bool $publisher
      * @return mixed
      */
@@ -549,6 +553,7 @@ class EPub
     /**
      * Set or get the book's copyright info
      *
+     * @deprecated 1.5.0 use getCopyright() or setCopyright() instead
      * @param string|bool $rights
      * @return mixed
      */
@@ -560,6 +565,7 @@ class EPub
     /**
      * Set or get the book's description
      *
+     * @deprecated 1.5.0 use getDescription() or setDescription() instead
      * @param string|bool $description
      * @return mixed
      */
@@ -571,6 +577,7 @@ class EPub
     /**
      * Set or get the book's Unique Identifier
      *
+     * @deprecated 1.5.0 use getUniqueIdentifier() or setUniqueIdentifier() instead
      * @param string|bool $uuid Unique identifier
      * @return mixed
      */
@@ -591,6 +598,7 @@ class EPub
     /**
      * Set or get the book's creation date
      *
+     * @deprecated 1.5.0 use getCreationDate() or setCreationDate() instead
      * @param string|bool $date Date eg: 2012-05-19T12:54:25Z
      * @return mixed
      */
@@ -604,6 +612,7 @@ class EPub
     /**
      * Set or get the book's modification date
      *
+     * @deprecated 1.5.0 use getModificationDate() or setModificationDate() instead
      * @param string|bool $date Date eg: 2012-05-19T12:54:25Z
      * @return mixed
      */
@@ -617,6 +626,7 @@ class EPub
     /**
      * Set or get the book's URI
      *
+     * @deprecated 1.5.0 use getUri() or setUri() instead
      * @param string|bool $uri URI
      * @return mixed
      */
@@ -630,6 +640,7 @@ class EPub
     /**
      * Set or get the book's ISBN number
      *
+     * @deprecated 1.5.0 use getIsbn() or setIsbn() instead
      * @param string|bool $isbn
      * @return mixed
      */
@@ -663,6 +674,7 @@ class EPub
     /**
      * Set or get the Calibre UUID of the book
      *
+     * @deprecated 1.5.0 use getCalibre() or setCalibre() instead
      * @param string|bool $uuid
      * @return mixed
      */
@@ -674,6 +686,7 @@ class EPub
     /**
      * Set or get the Serie of the book
      *
+     * @deprecated 1.5.0 use getSeries() or setSeries() instead
      * @param string|bool $serie
      * @return mixed
      */
@@ -683,8 +696,30 @@ class EPub
     }
 
     /**
+     * Set the Series of the book
+     *
+     * @param string $serie
+     * @return void
+     */
+    public function setSeries($serie)
+    {
+        $this->setMetaDestination('opf:meta', 'name', 'calibre:series', 'content', $serie);
+    }
+
+    /**
+     * Get the Series of the book
+     *
+     * @return mixed
+     */
+    public function getSeries()
+    {
+        return $this->getMetaDestination('opf:meta', 'name', 'calibre:series', 'content');
+    }
+
+    /**
      * Set or get the Serie Index of the book
      *
+     * @deprecated 1.5.0 use getSeriesIndex() or setSeriesIndex() instead
      * @param string|bool $serieIndex
      * @return mixed
      */
@@ -694,11 +729,33 @@ class EPub
     }
 
     /**
+     * Set the Series Index of the book
+     *
+     * @param string $seriesIndex
+     * @return void
+     */
+    public function setSeriesIndex($seriesIndex)
+    {
+        $this->setMetaDestination('opf:meta', 'name', 'calibre:series_index', 'content', $seriesIndex);
+    }
+
+    /**
+     * Get the Series Index of the book
+     *
+     * @return mixed
+     */
+    public function getSeriesIndex()
+    {
+        return $this->getMetaDestination('opf:meta', 'name', 'calibre:series_index', 'content');
+    }
+
+    /**
      * Set or get the book's subjects (aka. tags)
      *
      * Subject should be given as array, but a comma separated string will also
      * be accepted.
      *
+     * @deprecated 1.5.0 use getSubjects() or setSubjects() instead
      * @param array<string>|string|bool $subjects
      * @return array<mixed>
      */
@@ -761,6 +818,70 @@ class EPub
     }
 
     /**
+     * Read or update the cover data
+     *
+     * When adding a new image this function return no or old data because the
+     * image contents are not in the epub file, yet. The image will be added when
+     * the save() method is called.
+     *
+     * @deprecated 1.5.0 use getCoverInfo() or setCoverInfo() instead
+     * @param  string|bool $path local filesystem path to a new cover image
+     * @param  string|bool $mime mime type of the given file
+     * @return array<mixed>
+     */
+    public function Cover($path=false, $mime=false)
+    {
+        // set cover
+        if ($path !== false) {
+            $this->setCoverInfo($path, $mime);
+        }
+
+        // load cover
+        return $this->getCoverInfo();
+    }
+
+    /**
+     * Update the cover data
+     *
+     * When adding a new image this function return no or old data because the
+     * image contents are not in the epub file, yet. The image will be added when
+     * the save() method is called.
+     *
+     * @param  string $path local filesystem path to a new cover image
+     * @param  string $mime mime type of the given file
+     * @return void
+     */
+    public function setCoverInfo($path, $mime)
+    {
+        // remove current pointer
+        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
+        static::deleteNodes($nodes);
+        // remove previous manifest entries if they where made by us
+        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="'. static::COVER_ID . '"]');
+        static::deleteNodes($nodes);
+
+        // add pointer
+        /** @var EpubDomElement $parent */
+        $parent = $this->xpath->query('//opf:metadata')->item(0);
+        $node = $parent->newChild('opf:meta');
+        $node->setAttrib('opf:name', 'cover');
+        $node->setAttrib('opf:content', static::COVER_ID);
+
+        // add manifest
+        /** @var EpubDomElement $parent */
+        $parent = $this->xpath->query('//opf:manifest')->item(0);
+        $node = $parent->newChild('opf:item');
+        $node->setAttrib('id', static::COVER_ID);
+        $node->setAttrib('opf:href', static::COVER_ID . '.img');
+        $node->setAttrib('opf:media-type', $mime);
+
+        // remember path for save action
+        $this->imagetoadd = $path;
+
+        $this->reparse();
+    }
+
+    /**
      * Read the cover data
      *
      * Returns an associative array with the following keys:
@@ -772,49 +893,10 @@ class EPub
      * When no image is set in the epub file, the binary data for a transparent
      * GIF pixel is returned.
      *
-     * When adding a new image this function return no or old data because the
-     * image contents are not in the epub file, yet. The image will be added when
-     * the save() method is called.
-     *
-     * @param  string|bool $path local filesystem path to a new cover image
-     * @param  string|bool $mime mime type of the given file
      * @return array<mixed>
      */
-    public function Cover($path=false, $mime=false)
+    public function getCoverInfo()
     {
-        // set cover
-        if ($path !== false) {
-            // remove current pointer
-            $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
-            static::deleteNodes($nodes);
-            // remove previous manifest entries if they where made by us
-            $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="'. static::COVER_ID . '"]');
-            static::deleteNodes($nodes);
-
-            if ($path) {
-                // add pointer
-                /** @var EpubDomElement $parent */
-                $parent = $this->xpath->query('//opf:metadata')->item(0);
-                $node = $parent->newChild('opf:meta');
-                $node->setAttrib('opf:name', 'cover');
-                $node->setAttrib('opf:content', static::COVER_ID);
-
-                // add manifest
-                /** @var EpubDomElement $parent */
-                $parent = $this->xpath->query('//opf:manifest')->item(0);
-                $node = $parent->newChild('opf:item');
-                $node->setAttrib('id', static::COVER_ID);
-                $node->setAttrib('opf:href', static::COVER_ID . '.img');
-                $node->setAttrib('opf:media-type', $mime);
-
-                // remember path for save action
-                $this->imagetoadd = $path;
-            }
-
-            $this->reparse();
-        }
-
-        // load cover
         $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
         if (!$nodes->length) {
             return $this->no_cover();
@@ -952,7 +1034,7 @@ class EPub
      * @param mixed $context
      * @return string
      */
-    private function getFullPath($file, $context = null)
+    protected function getFullPath($file, $context = null)
     {
         $path = dirname('/' . $this->meta) . '/' . $file;
         $path = ltrim($path, '\\');
@@ -978,16 +1060,29 @@ class EPub
 
     /**
      * Summary of Cover2
+     * @deprecated 1.5.0 use setCoverFile() instead
      * @param mixed $path
      * @param mixed $mime
      * @return array<mixed>|void
      */
     public function Cover2($path=false, $mime=false)
     {
+        return $this->setCoverFile($path, $mime);
+    }
+
+    /**
+     * Summary of setCoverFile
+     * @param string $path
+     * @param string $mime
+     * @return array<mixed>|void
+     */
+    public function setCoverFile($path, $mime)
+    {
         $hascover = true;
         $item = $this->getCoverItem();
         if (is_null($item)) {
             $hascover = false;
+            return; // TODO For now only update
         } else {
             $mime = $item->getAttrib('opf:media-type');
             $this->coverpath = $item->getAttrib('opf:href');
@@ -997,24 +1092,13 @@ class EPub
         }
 
         // set cover
-        if ($path !== false) {
-            if (!$hascover) {
-                return; // TODO For now only update
-            }
 
-            if ($path) {
-                $item->setAttrib('opf:media-type', $mime);
+        $item->setAttrib('opf:media-type', $mime);
 
-                // remember path for save action
-                $this->imagetoadd = $path;
-            }
+        // remember path for save action
+        $this->imagetoadd = $path;
 
-            $this->reparse();
-        }
-
-        if (!$hascover) {
-            return $this->no_cover();
-        }
+        $this->reparse();
 
         // not very useful here, but data gets added in download() if needed
         return [
@@ -1175,7 +1259,7 @@ class EPub
      * @param bool $caseSensitive
      * @return mixed
      */
-    private function setMeta($item, $value, $attribute = false, $attributeValue = false, $caseSensitive = true)
+    protected function setMeta($item, $value, $attribute = false, $attributeValue = false, $caseSensitive = true)
     {
         /**
         if ($attributeValue !== false && !$caseSensitive) {
@@ -1202,7 +1286,7 @@ class EPub
      * @param bool $caseSensitive
      * @return string
      */
-    private function getMeta($item, $att = false, $aval = false, $caseSensitive = true)
+    protected function getMeta($item, $att = false, $aval = false, $caseSensitive = true)
     {
         /**
         if ($aval !== false && !$caseSensitive) {
@@ -1216,6 +1300,39 @@ class EPub
         }
          */
         return $this->getset($item, false, $att, $aval);
+    }
+
+    /**
+     * A simple setter for simple meta attributes - with destination attribute (for Serie)
+     *
+     * It should only be used for attributes that are expected to be unique
+     *
+     * @param string $item XML node to set
+     * @param string $attribute Attribute name
+     * @param string $attributeValue Attribute value
+     * @param string $datt   Destination attribute
+     * @param string $value New node value
+     * @return mixed
+     */
+    protected function setMetaDestination($item, $attribute, $attributeValue, $datt, $value)
+    {
+        return $this->getset($item, $value, $attribute, $attributeValue, $datt);
+    }
+
+    /**
+     * A simple getter for simple meta attributes - with destination attribute (for Serie)
+     *
+     * It should only be used for attributes that are expected to be unique
+     *
+     * @param string $item XML node to get
+     * @param string $att Attribute name
+     * @param string $aval Attribute value
+     * @param string $datt   Destination attribute
+     * @return string
+     */
+    protected function getMetaDestination($item, $att, $aval, $datt)
+    {
+        return $this->getset($item, false, $att, $aval, $datt);
     }
 
     /**
@@ -1321,6 +1438,77 @@ class EPub
     public function getDescription()
     {
         return $this->getMeta('dc:description');
+    }
+
+    /**
+     * Set a date for an event in the package file’s meta section.
+     *
+     * @param string $event
+     * @param string $date Date eg: 2012-05-19T12:54:25Z
+     * @return void
+     */
+    public function setEventDate($event, $date)
+    {
+        $this->getset('dc:date', $date, 'opf:event', $event);
+    }
+
+    /**
+     * Get a date for an event in the package file’s meta section.
+     *
+     * @param string $event
+     * @return mixed
+     */
+    public function getEventDate($event)
+    {
+        $res = $this->getset('dc:date', false, 'opf:event', $event);
+
+        return $res;
+    }
+
+    /**
+     * Set the book's creation date
+     *
+     * @param string $date Date eg: 2012-05-19T12:54:25Z
+     * @return void
+     */
+    public function setCreationDate($date)
+    {
+        $this->setEventDate('creation', $date);
+    }
+
+    /**
+     * Get the book's creation date
+     *
+     * @return mixed
+     */
+    public function getCreationDate()
+    {
+        $res = $this->getEventDate('creation');
+
+        return $res;
+    }
+
+    /**
+     * Set the book's modification date
+     *
+     * @param string $date Date eg: 2012-05-19T12:54:25Z
+     * @return void
+     */
+    public function setModificationDate($date)
+    {
+        $this->setEventDate('modification', $date);
+    }
+
+    /**
+     * Get the book's modification date
+     *
+     * @return mixed
+     */
+    public function getModificationDate()
+    {
+        $res = $this->getEventDate('modification');
+
+        return $res;
     }
 
     /**
@@ -1443,6 +1631,27 @@ class EPub
     public function getIsbn()
     {
         return $this->getIdentifier('ISBN');
+    }
+
+    /**
+     * Set the Calibre UUID of the book
+     *
+     * @param string $uuid
+     * @return void
+     */
+    public function setCalibre($uuid)
+    {
+        $this->setIdentifier('calibre', $uuid);
+    }
+
+    /**
+     * Get the Calibre UUID of the book
+     *
+     * @return string
+     */
+    public function getCalibre()
+    {
+        return $this->getIdentifier('calibre');
     }
 
     /**

@@ -118,7 +118,7 @@ class Other extends EPub
      * @param bool|string $attributeValue Attribute value
      * @param bool $caseSensitive
      */
-    private function setMeta($item, $value, $attribute = false, $attributeValue = false, $caseSensitive = true)
+    protected function setMeta($item, $value, $attribute = false, $attributeValue = false, $caseSensitive = true)
     {
         $xpath = $this->buildMetaXPath($item, $attribute, $attributeValue, $caseSensitive);
 
@@ -170,7 +170,7 @@ class Other extends EPub
      * @param bool $caseSensitive
      * @return string
      */
-    private function getMeta($item, $att = false, $aval = false, $caseSensitive = true)
+    protected function getMeta($item, $att = false, $aval = false, $caseSensitive = true)
     {
         $xpath = $this->buildMetaXPath($item, $att, $aval, $caseSensitive);
 
@@ -198,7 +198,7 @@ class Other extends EPub
      * A lower-case function is missing in XPath 1.0.)
      * @return string
      */
-    private function buildMetaXPath($element, $attribute, $value, $caseSensitive = true)
+    protected function buildMetaXPath($element, $attribute, $value, $caseSensitive = true)
     {
         $xpath = '//opf:metadata/'.$element;
         if ($attribute) {
@@ -231,7 +231,7 @@ class Other extends EPub
      * @return EpubDomXPath The XPath representation of the XML file.
      * @throws Exception If the given path could not be read.
      */
-    private function loadXPathFromItem($path)
+    protected function loadXPathFromItem($path)
     {
         $data = $this->zip->getFromName($path);
         if (!$data) {
@@ -247,7 +247,7 @@ class Other extends EPub
     /**
      * Sync XPath object with updated DOM.
      */
-    private function sync()
+    protected function sync()
     {
         $dom = $this->xpath->document;
         $dom->loadXML($dom->saveXML());
