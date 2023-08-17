@@ -544,11 +544,13 @@ class EPubTest extends TestCase
         $cover = $epub->getCover();
         $this->assertEquals(657911, strlen($cover));
 
-        // change cover
+        // change cover and save
         $epub->setCover(self::TEST_IMAGE, 'image/jpeg');
         $epub->save();
 
+        // open epub again
         $epub = new EPub(self::TEST_EPUB_COVER);
+
         // read recently changed cover
         $cover = $epub->getCover();
         $this->assertEquals(filesize(self::TEST_IMAGE), strlen($cover));
@@ -559,6 +561,39 @@ class EPubTest extends TestCase
         $this->assertNull($cover);
 
         $epub->close();
+
+        unlink(self::TEST_EPUB_COVER);
+    }
+
+    /**
+     * @throws Exception
+     * @return void
+     */
+    public function testTitlePage()
+    {
+        // we work on a copy to test saving
+        $this->assertTrue(copy(self::TEST_EPUB, self::TEST_EPUB_COVER));
+
+        // use the clsTbsZip class here
+        //$epub = new EPub(self::TEST_EPUB_COVER, clsTbsZip::class);
+        $epub = new EPub(self::TEST_EPUB_COVER);
+
+        // add title page and save
+        $epub->addCoverImageTitlePage();
+        $epub->save();
+
+        // open epub again
+        $epub = new EPub(self::TEST_EPUB_COVER);
+
+        // read recently added title page
+        $spine = $epub->getSpine();
+        $titlePage = $spine->first();
+        $this->assertEquals(EPub::TITLE_PAGE_ID . '.xhtml', $titlePage->getHref());
+        $this->assertEquals(EPub::TITLE_PAGE_ID, $titlePage->getId());
+        $this->assertEquals('application/xhtml+xml', (string)$titlePage->getMediaType());
+
+        // We expect an empty string since there is only an image but no text on that page.
+        $this->assertEmpty(trim($titlePage->getContents()));
 
         unlink(self::TEST_EPUB_COVER);
     }
@@ -637,7 +672,6 @@ class EPubTest extends TestCase
         $this->assertEquals('Prologue', $navPoint->getChildren()->first()->getNavLabel());
         $this->assertEquals('SCENE V. A hall in Capulet\'s house.', $navPoint->getChildren()->last()->getNavLabel());
     }
-
 
     /**
      * @throws Exception
