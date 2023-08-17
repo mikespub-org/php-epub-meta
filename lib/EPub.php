@@ -51,6 +51,7 @@ class EPub
     protected string $meta;
     /** @var clsTbsZip|ZipFile */
     protected $zip;
+    protected string $zipClass;
     protected string $coverpath='';
     /** @var mixed */
     protected $namespaces;
@@ -100,6 +101,7 @@ class EPub
         if (!$this->zip->Open($this->file)) {
             throw new Exception('Failed to read epub file');
         }
+        $this->zipClass = $zipClass;
     }
 
     /**
@@ -246,10 +248,10 @@ class EPub
     public function cleanITunesCrap()
     {
         if ($this->zip->FileExists('iTunesMetadata.plist')) {
-            $this->zip->FileReplace('iTunesMetadata.plist', false);
+            $this->zip->FileDelete('iTunesMetadata.plist');
         }
         if ($this->zip->FileExists('iTunesArtwork')) {
-            $this->zip->FileReplace('iTunesArtwork', false);
+            $this->zip->FileDelete('iTunesArtwork');
         }
     }
 
@@ -273,7 +275,7 @@ class EPub
         $this->zip->FileReplace($this->meta, $this->xml->saveXML());
         // add the cover image
         if ($this->imagetoadd) {
-            $this->zip->FileReplace($this->coverpath, file_get_contents($this->imagetoadd));
+            $this->zip->FileAddPath($this->coverpath, $this->imagetoadd);
             $this->imagetoadd='';
         }
         if ($file) {
@@ -1719,9 +1721,9 @@ class EPub
 
         // remove any cover image file added by us
         if (isset($manifest[static::COVER_ID])) {
-            $fullPath = $this->getFullPath(static::COVER_ID . '.img');
-            if (!$this->zip->FileReplace($fullPath, false)) {
-                throw new Exception('Unable to remove ' . $fullPath);
+            $name = $this->getFullPath(static::COVER_ID . '.img');
+            if (!$this->zip->FileDelete($name)) {
+                throw new Exception('Unable to remove ' . $name);
             }
         }
 
@@ -1771,9 +1773,9 @@ class EPub
         $node->setAttrib('opf:media-type', $mime);
 
         // add the cover image
-        $fullPath = $this->getFullPath(static::COVER_ID . '.img');
-        if (!$this->zip->FileAdd($fullPath, file_get_contents($path))) {
-            throw new Exception('Unable to add ' . $fullPath);
+        $name = $this->getFullPath(static::COVER_ID . '.img');
+        if (!$this->zip->FileAddPath($name, $path)) {
+            throw new Exception('Unable to add ' . $name);
         }
 
         $this->reparse();
@@ -1814,9 +1816,9 @@ class EPub
         // add title page file to zip
         $template = file_get_contents($templatePath);
         $xhtml = strtr($template, ['{{ title }}' => $this->getTitle(), '{{ coverPath }}' => $this->getCoverPath()]);
-        $fullPath = $this->getFullPath($xhtmlFilename);
-        if (!$this->zip->FileReplace($fullPath, $xhtml)) {
-            throw new Exception('Unable to replace ' . $fullPath);
+        $name = $this->getFullPath($xhtmlFilename);
+        if (!$this->zip->FileReplace($name, $xhtml)) {
+            throw new Exception('Unable to replace ' . $name);
         }
 
         // prepend title page file to manifest
@@ -1851,9 +1853,9 @@ class EPub
         $xhtmlFilename = static::TITLE_PAGE_ID . '.xhtml';
 
         // remove title page file from zip
-        $fullPath = $this->getFullPath($xhtmlFilename);
-        if (!$this->zip->FileReplace($fullPath, false)) {
-            throw new Exception('Unable to remove ' . $fullPath);
+        $name = $this->getFullPath($xhtmlFilename);
+        if (!$this->zip->FileDelete($name)) {
+            throw new Exception('Unable to remove ' . $name);
         }
 
         // remove title page file from manifest
