@@ -26,8 +26,6 @@ use Exception;
 use InvalidArgumentException;
 use ZipArchive;
 
-use const SebLucas\TbsZip\TBSZIP_DOWNLOAD;
-
 class EPub
 {
     /** Identifier for cover image inserted by this lib. */
@@ -35,6 +33,7 @@ class EPub
     /** Identifier for title page inserted by this lib. */
     public const TITLE_PAGE_ID = 'php-epub-meta-titlepage';
     public const METADATA_FILE = 'META-INF/container.xml';
+    public const MIME_TYPE = 'application/epub+zip';
     /** @var DOMDocument */
     public $xml; //FIXME: change to protected, later
     /** @var DOMDocument */
@@ -268,9 +267,10 @@ class EPub
     /**
      * Get the updated epub
      * @param mixed $file
+     * @param bool $sendHeaders
      * @return void
      */
-    public function download($file=false)
+    public function download($file = false, $sendHeaders = true)
     {
         $this->zip->FileReplace($this->meta, $this->xml->saveXML());
         // add the cover image
@@ -279,7 +279,8 @@ class EPub
             $this->imagetoadd='';
         }
         if ($file) {
-            $this->zip->Flush(TBSZIP_DOWNLOAD, $file);
+            $render = $this->zipClass::DOWNLOAD;
+            $this->zip->Flush($render, $file, self::MIME_TYPE, $sendHeaders);
         }
     }
 
@@ -311,7 +312,8 @@ class EPub
         $path = $this->decodeComponentName($comp);
         $path = $this->getFullPath($path);
         if (!$this->zip->FileExists($path)) {
-            throw new Exception('Unable to find ' . $path . ' <' . $comp . '>');
+            $status = $this->zip->FileGetState($path);
+            throw new Exception('Unable to find ' . $path . ' <' . $comp . '> = ' . $status);
         }
 
         $data = $this->zip->FileRead($path);
