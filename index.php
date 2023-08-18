@@ -25,9 +25,9 @@ $epub = null;
 $error = null;
 if (!empty($_REQUEST['book'])) {
     try {
-        $book = $_REQUEST['book'];
-        $book = str_replace('..', '', $book); // no upper dirs, lowers might be supported later
-        $epub = new EPub($bookdir . $book . '.epub');
+        $book = preg_replace('/[^\w _-]+/', '', $_REQUEST['book']);
+        $book = basename($book . '.epub'); // no upper dirs, lowers might be supported later
+        $epub = new EPub($bookdir . $book);
     } catch (Exception $e) {
         $error = $e->getMessage();
     }
