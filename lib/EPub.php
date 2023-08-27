@@ -36,9 +36,9 @@ class EPub
     public const MIME_TYPE = 'application/epub+zip';
     /** @var DOMDocument */
     public $xml; //FIXME: change to protected, later
-    /** @var DOMDocument */
+    /** @var DOMDocument|null */
     public $toc;
-    /** @var DOMDocument */
+    /** @var DOMDocument|null */
     public $nav;
     /** @var EpubDomXPath */
     protected $xpath;
