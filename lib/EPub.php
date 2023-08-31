@@ -17,8 +17,8 @@ use SebLucas\EPubMeta\Contents\Spine;
 use SebLucas\EPubMeta\Contents\NavPoint as TocNavPoint;
 use SebLucas\EPubMeta\Contents\NavPointList as TocNavPointList;
 use SebLucas\EPubMeta\Contents\Toc;
-use SebLucas\TbsZip\clsTbsZip;
-use Marsender\EPubLoader\ZipFile;
+use SebLucas\EPubMeta\Tools\ZipEdit;
+use SebLucas\EPubMeta\Tools\ZipFile;
 use DOMDocument;
 use DOMElement;
 use DOMNodeList;
@@ -48,7 +48,7 @@ class EPub
     protected $nav_xpath;
     protected string $file;
     protected string $meta;
-    /** @var clsTbsZip|ZipFile */
+    /** @var ZipEdit|ZipFile */
     protected $zip;
     protected string $zipClass;
     protected string $coverpath = '';

@@ -4,12 +4,10 @@ use PHPUnit\Framework\TestCase;
 use SebLucas\EPubMeta\Contents\NavPoint as TocNavPoint;
 use SebLucas\EPubMeta\EPub;
 use SebLucas\EPubMeta\Data\Item as DataItem;
-use SebLucas\TbsZip\clsTbsZip;
+use SebLucas\EPubMeta\Tools\ZipEdit;
 
 // remove seblucas/tbszip from composer.json
 include_once(dirname(dirname(__DIR__)) . '/tbszip/tbszip.php');
-// remove marsender/epub-loader from composer.json
-include_once(dirname(dirname(__DIR__)) . '/epub-loader/ZipFile.class.php');
 
 /**
  * Test for EPUB library
@@ -536,8 +534,8 @@ class EPubTest extends TestCase
         // we work on a copy to test saving
         $this->assertTrue(copy(self::TEST_EPUB, self::TEST_EPUB_COVER));
 
-        // use the clsTbsZip class here
-        //$epub = new EPub(self::TEST_EPUB_COVER, clsTbsZip::class);
+        // use the ZipEdit class here
+        //$epub = new EPub(self::TEST_EPUB_COVER, ZipEdit::class);
         $epub = new EPub(self::TEST_EPUB_COVER);
 
         // read current cover
@@ -574,8 +572,8 @@ class EPubTest extends TestCase
         // we work on a copy to test saving
         $this->assertTrue(copy(self::TEST_EPUB, self::TEST_EPUB_COVER));
 
-        // use the clsTbsZip class here
-        //$epub = new EPub(self::TEST_EPUB_COVER, clsTbsZip::class);
+        // use the ZipEdit class here
+        //$epub = new EPub(self::TEST_EPUB_COVER, ZipEdit::class);
         $epub = new EPub(self::TEST_EPUB_COVER);
 
         // add title page and save
