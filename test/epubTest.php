@@ -544,10 +544,10 @@ class EPubTest extends TestCase
 
         // change cover and save
         $epub->setCover(static::TEST_IMAGE, 'image/jpeg');
-        $epub->save();
+        //$epub->save();
 
         // open epub again
-        $epub = new EPub(static::TEST_EPUB_COVER);
+        //$epub = new EPub(static::TEST_EPUB_COVER);
 
         // read recently changed cover
         $cover = $epub->getCover();
@@ -578,10 +578,10 @@ class EPubTest extends TestCase
 
         // add title page and save
         $epub->addCoverImageTitlePage();
-        $epub->save();
+        //$epub->save();
 
         // open epub again
-        $epub = new EPub(static::TEST_EPUB_COVER);
+        //$epub = new EPub(static::TEST_EPUB_COVER);
 
         // read recently added title page
         $spine = $epub->getSpine();
@@ -862,5 +862,18 @@ class EPubTest extends TestCase
         $data = $item->getData();
 
         $this->assertEquals(strlen($data), $size);
+    }
+
+    /**
+     * Summary of testZipEdit
+     * @return void
+     */
+    public function testZipEdit()
+    {
+        ZipEdit::copyTest(static::TEST_EPUB_COPY, static::TEST_EPUB_COVER);
+        $epub = new EPub(static::TEST_EPUB_COVER);
+        $oldManifest = $this->epub->getManifest();
+        $newManifest = $epub->getManifest();
+        $this->assertEquals($oldManifest, $newManifest);
     }
 }

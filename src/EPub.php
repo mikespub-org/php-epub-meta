@@ -281,6 +281,8 @@ class EPub
         if ($file) {
             $render = $this->zipClass::DOWNLOAD;
             $this->zip->Flush($render, $file, static::MIME_TYPE, $sendHeaders);
+        } elseif ($this->zipClass == ZipEdit::class) {
+            $this->zip->SaveBeforeClose();
         }
     }
 

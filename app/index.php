@@ -1,6 +1,7 @@
 <?php
 
 use SebLucas\EPubMeta\EPub;
+use SebLucas\EPubMeta\Tools\ZipEdit;
 
 // modify this to point to your book directory
 $bookdir = '/home/andi/Dropbox/ebooks/';
@@ -22,7 +23,7 @@ if (!empty($_REQUEST['book'])) {
     try {
         $book = preg_replace('/[^\w _-]+/', '', $_REQUEST['book']);
         $book = basename($book . '.epub'); // no upper dirs, lowers might be supported later
-        $epub = new EPub($bookdir . $book);
+        $epub = new EPub($bookdir . $book, ZipEdit::class);
     } catch (Exception $e) {
         $error = $e->getMessage();
     }
