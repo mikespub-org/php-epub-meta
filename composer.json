@@ -1,9 +1,9 @@
 {
-    "name": "seblucas/php-epub-meta",
+    "name": "mikespub/php-epub-meta",
     "type": "library",
     "description": "Reading and writing metadata included in the EPub ebook format",
     "keywords": ["epub", "metadata", "ebook"],
-    "homepage": "https://github.com/seblucas/php-epub-meta",
+    "homepage": "https://github.com/mikespub-org/php-epub-meta",
     "authors": [
         {
             "name": "Andreas Gohr",
@@ -15,6 +15,11 @@
             "name": "Sébastien Lucas",
             "email": "sebastien@slucas.fr",
             "homepage": "http://www.slucas.fr/",
+            "role": "Developer"
+        },
+        {
+            "name": "mikespub",
+            "homepage": "https://github.com/mikespub-org/php-epub-meta",
             "role": "Developer"
         }
     ],
@@ -28,6 +33,6 @@
         "phpunit/phpunit": "9.*"
     },
     "autoload": {
-        "classmap": ["src/", "../tbszip/src/"]
+        "classmap": ["src/"]
     }
 }
