@@ -6,9 +6,6 @@ use SebLucas\EPubMeta\EPub;
 use SebLucas\EPubMeta\Data\Item as DataItem;
 use SebLucas\EPubMeta\Tools\ZipEdit;
 
-// remove seblucas/tbszip from composer.json
-include_once(dirname(dirname(__DIR__)) . '/tbszip/tbszip.php');
-
 /**
  * Test for EPUB library
  *

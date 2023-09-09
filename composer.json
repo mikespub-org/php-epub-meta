@@ -25,6 +25,7 @@
     ],
     "license": "MIT",
     "require": {
+        "php": ">=7.4",
         "ext-dom": "*",
         "ext-xml": "*",
         "ext-zip": "*"
@@ -33,6 +34,6 @@
         "phpunit/phpunit": "9.*"
     },
     "autoload": {
-        "classmap": ["src/"]
+        "classmap": ["src/", "resources/tbszip/src/"]
     }
 }
