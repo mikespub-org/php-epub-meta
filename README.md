@@ -39,6 +39,6 @@ add these lines to your project's `composer.json`:
 
 ```
     "require": {
-        "seblucas/php-epub-meta": "dev-master",
+        "mikespub/php-epub-meta": "dev-main",
     }
 ```
