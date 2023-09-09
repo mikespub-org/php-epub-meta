@@ -8,7 +8,6 @@
     <exclude>
       <directory suffix=".php">./test</directory>
       <directory suffix=".php">./vendor</directory>
-      <file>tbszip.php</file>
     </exclude>
     <report>
       <clover outputFile="./clover.xml"/>
