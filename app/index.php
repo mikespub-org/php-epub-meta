@@ -115,8 +115,8 @@ header('Content-Type: text/html; charset=utf-8');
 <head>
     <title>EPub Manager</title>
 
-    <link rel="stylesheet" type="text/css" href="../assets/css/smoothness/jquery-ui-1.8.18.custom.css" />
-    <link rel="stylesheet" type="text/css" href="../assets/css/cleditor/jquery.cleditor.css" />
+    <link rel="stylesheet" type="text/css" href="../assets/css/smoothness/jquery-ui-1.13.2.custom.min.css" />
+    <link rel="stylesheet" type="text/css" href="../assets/css/cleditor/jquery.cleditor-1.4.5.css" />
     <link rel="stylesheet" type="text/css" href="../assets/css/style.css" />
 
     <script type="text/javascript">
@@ -217,9 +217,9 @@ foreach ($list as $book) {
     <?php endif; ?>
 
     <!-- load at the end, for faster site load -->
-    <script type="text/javascript" src="../assets/js/jquery-1.7.1.min.js"></script>
-    <script type="text/javascript" src="../assets/js/jquery-ui-1.8.18.custom.min.js"></script>
-    <script type="text/javascript" src="../assets/js/jquery.cleditor.min.js"></script>
+    <script type="text/javascript" src="../assets/js/jquery-3.7.1.min.js"></script>
+    <script type="text/javascript" src="../assets/js/jquery-ui-1.13.2.custom.min.js"></script>
+    <script type="text/javascript" src="../assets/js/jquery.cleditor-1.4.5.min.js"></script>
     <script type="text/javascript" src="../assets/js/script.js"></script>
 
 </div>

@@ -33,6 +33,10 @@
     "require-dev": {
         "phpunit/phpunit": "9.*"
     },
+    "suggest": {
+        "mikespub/seblucas-cops": "COPS - Calibre OPDS (and HTML) PHP Server",
+        "mikespub/epub-loader": "epub-loader is a utility resource for ebooks"
+    },
     "autoload": {
         "classmap": ["src/", "resources/tbszip/src/"]
     }
