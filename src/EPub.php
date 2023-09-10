@@ -949,21 +949,13 @@ class EPub
      */
     public function getCoverInfo()
     {
-        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
-        if (!$nodes->length) {
-            return $this->no_cover();
-        }
-        $coverid = (string) static::getAttr($nodes, 'opf:content');
-        if (!$coverid) {
+        $item = $this->getCoverItem();
+        if (!$item) {
             return $this->no_cover();
         }
 
-        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="' . $coverid . '"]');
-        if (!$nodes->length) {
-            return $this->no_cover();
-        }
-        $mime = static::getAttr($nodes, 'opf:media-type');
-        $path = static::getAttr($nodes, 'opf:href');
+        $mime = $item->getAttrib('opf:media-type');
+        $path = $item->getAttrib('opf:href');
         $path = dirname('/' . $this->meta) . '/' . $path; // image path is relative to meta file
         $path = ltrim($path, '/');
 
