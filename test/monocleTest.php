@@ -14,6 +14,7 @@ class MonocleTest extends TestCase
     public const TEST_EPUB_COPY = __DIR__ . '/data/eng.copy.epub';
     public const TEST_CONTENTS = __DIR__ . '/data/eng.contents.json';
     public const TEST_COMPONENTS = __DIR__ . '/data/eng.components.json';
+    public const TEST_EPUB3 = __DIR__ . '/data/eng3.epub';
 
     private static EPub $book;
 
@@ -104,6 +105,20 @@ class MonocleTest extends TestCase
     {
         $data = self::$book->componentContentType($component);
         $check = 'application/xhtml+xml';
+        $this->assertEquals($check, $data);
+    }
+
+    public function testContentsEpub3(): void
+    {
+        $epub = new EPub(__DIR__ . '/data/eng3.epub');
+        $epub->initSpineComponent();
+        $data = $epub->contents();
+        $contents = file_get_contents(static::TEST_CONTENTS);
+        $check = json_decode($contents, true);
+        $encoder = $this->provideEncodeReplace();
+        foreach (array_keys($check) as $idx) {
+            $check[$idx] = $this->encodeItem($check[$idx], $encoder);
+        }
         $this->assertEquals($check, $data);
     }
 

@@ -461,7 +461,16 @@ class EPub
         $title = $nodes->item(0)->nodeValue;
         $src = static::getAttr($nodes, 'href');
         $src = $this->encodeComponentName($src);
-        return ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
+        $item = ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
+        $insidenodes = $this->nav_xpath->query('x:ol/x:li', $node);
+        if (count($insidenodes) < 1) {
+            return $item;
+        }
+        $item['children'] = [];
+        foreach ($insidenodes as $insidenode) {
+            $item['children'][] = $this->getNavTocListItem($insidenode);
+        }
+        return $item;
     }
 
     /**
@@ -476,7 +485,7 @@ class EPub
         $contents = [];
         if (!empty($this->nav)) {
             $toc = $this->nav_xpath->query('//x:nav[@epub:type="toc"]')->item(0);
-            $nodes = $this->nav_xpath->query('//x:ol/x:li', $toc);
+            $nodes = $this->nav_xpath->query('x:ol/x:li', $toc);
             foreach ($nodes as $node) {
                 $contents[] = $this->getNavTocListItem($node);
             }
