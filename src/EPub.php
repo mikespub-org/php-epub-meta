@@ -34,6 +34,17 @@ class EPub
     public const TITLE_PAGE_ID = 'php-epub-meta-titlepage';
     public const METADATA_FILE = 'META-INF/container.xml';
     public const MIME_TYPE = 'application/epub+zip';
+    /** @var array<int, array<string>> */
+    public static $encodeNameReplace = [
+        ['/', '-'],
+        ['~SLASH~', '~DASH~'],
+    ];
+    /** @var array<int, array<string>> */
+    public static $decodeNameReplace = [
+        ['~SLASH~', '~DASH~'],
+        ['/', '-'],
+    ];
+
     /** @var DOMDocument */
     public $xml; //FIXME: change to protected, later
     /** @var DOMDocument|null */
@@ -353,8 +364,8 @@ class EPub
     protected static function encodeComponentName($src)
     {
         return str_replace(
-            ['/', '-'],
-            ['~SLASH~', '~DASH~'],
+            static::$encodeNameReplace[0],
+            static::$encodeNameReplace[1],
             $src
         );
     }
@@ -367,8 +378,8 @@ class EPub
     protected static function decodeComponentName($src)
     {
         return str_replace(
-            ['~SLASH~', '~DASH~'],
-            ['/', '-'],
+            static::$decodeNameReplace[0],
+            static::$decodeNameReplace[1],
             $src
         );
     }
@@ -426,7 +437,16 @@ class EPub
         $nodes = $this->toc_xpath->query('x:content', $node);
         $src = static::getAttr($nodes, 'src');
         $src = $this->encodeComponentName($src);
-        return ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
+        $item = ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
+        $insidenodes = $this->toc_xpath->query('x:navPoint', $node);
+        if (count($insidenodes) < 1) {
+            return $item;
+        }
+        $item['children'] = [];
+        foreach ($insidenodes as $insidenode) {
+            $item['children'][] = $this->getNavPointDetail($insidenode);
+        }
+        return $item;
     }
 
     /**
@@ -447,7 +467,8 @@ class EPub
     /**
      * Get the Epub content (TOC) as an array
      *
-     * For each chapter there is a "title" and a "src"
+     * For each chapter there is a "title" and a "src", and optional "children"
+     * See https://github.com/joseph/Monocle/wiki/Book-data-object for details
      * @return mixed
      */
     public function contents()
@@ -464,11 +485,6 @@ class EPub
         $nodes = $this->toc_xpath->query('//x:ncx/x:navMap/x:navPoint');
         foreach ($nodes as $node) {
             $contents[] = $this->getNavPointDetail($node);
-
-            $insidenodes = $this->toc_xpath->query('x:navPoint', $node);
-            foreach ($insidenodes as $insidenode) {
-                $contents[] = $this->getNavPointDetail($insidenode);
-            }
         }
         return $contents;
     }

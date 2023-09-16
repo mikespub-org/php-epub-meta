@@ -1,0 +1,96 @@
+[
+    {
+        "title": "Calibre Quick Start Guide",
+        "src": "text/internal_titlepage.xhtml"
+    },
+    {
+        "title": "Table of Contents",
+        "src": "text/toc.xhtml"
+    },
+    {
+        "title": "Introduction",
+        "src": "text/introduction.xhtml"
+    },
+    {
+        "title": "Installing calibre",
+        "src": "text/installing_calibre.xhtml"
+    },
+    {
+        "title": "The Main Library Window, aka the GUI",
+        "src": "text/the_main_gui_window.xhtml"
+    },
+    {
+        "title": "Common Tasks",
+        "src": "text/common_tasks.xhtml",
+        "children": [
+            {
+                "title": "Task 1: Organizing",
+                "src": "text/task_1_organizing.xhtml"
+            },
+            {
+                "title": "Task 2: Conversion",
+                "src": "text/task_2_conversion.xhtml",
+                "children": [
+                    {
+                        "title": "2.1: Background",
+                        "src": "text/task_2_conversion.xhtml#task2.1"
+                    },
+                    {
+                        "title": "2.2: Why are there different e-book formats?",
+                        "src": "text/task_2_conversion.xhtml#task2.2"
+                    },
+                    {
+                        "title": "2.3: Conversion basics",
+                        "src": "text/task_2_conversion.xhtml#task2.3"
+                    },
+                    {
+                        "title": "2.4: Auto Conversion",
+                        "src": "text/task_2_conversion.xhtml#task2.4"
+                    },
+                    {
+                        "title": "2.5: More robust conversion",
+                        "src": "text/task_2_conversion.xhtml#task2.5"
+                    },
+                    {
+                        "title": "2.6: Limitations of conversion",
+                        "src": "text/task_2_conversion.xhtml#task2.6"
+                    },
+                    {
+                        "title": "2.7: DRM: the bane of conversion",
+                        "src": "text/task_2_conversion.xhtml#task2.7"
+                    }
+                ]
+            },
+            {
+                "title": "Task 3: The e-book editor",
+                "src": "text/task_3_the_ebook_editor.xhtml"
+            },
+            {
+                "title": "Task 4: Downloading News",
+                "src": "text/task_4_downloading_news.xhtml"
+            },
+            {
+                "title": "Task 5: Interacting with e-book readers",
+                "src": "text/task_5_interacting_with_ebook_readers.xhtml",
+                "children": [
+                    {
+                        "title": "5.1: Putting an e-book on your e-book reader",
+                        "src": "text/task_5_interacting_with_ebook_readers.xhtml#task5.1"
+                    },
+                    {
+                        "title": "5.2: E-book reader optional configuration",
+                        "src": "text/task_5_interacting_with_ebook_readers.xhtml#task5.2"
+                    }
+                ]
+            },
+            {
+                "title": "Task 6: The e-book viewer",
+                "src": "text/task_6_the_ebook_viewer.xhtml"
+            }
+        ]
+    },
+    {
+        "title": "Where to get help",
+        "src": "text/where_to_get_help.xhtml"
+    }
+]

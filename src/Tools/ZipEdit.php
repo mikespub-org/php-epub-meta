@@ -261,7 +261,7 @@ class ZipEdit
      * @param bool $ReplacedAndDeleted
      * @return int
      */
-    public function FileCancelModif($inFileName, $ReplacedAndDeleted=true)
+    public function FileCancelModif($inFileName, $ReplacedAndDeleted = true)
     {
         // cancel added, modified or deleted modifications on a file in the archive
         // return the number of cancels
@@ -333,7 +333,7 @@ class ZipEdit
      * @param resource|null $outFileStream
      * @return void
      */
-    public function Flush($render=self::DOWNLOAD, $outFileName='', $contentType='', $sendHeaders = true, $outFileStream = null)
+    public function Flush($render = self::DOWNLOAD, $outFileName = '', $contentType = '', $sendHeaders = true, $outFileStream = null)
     {
         // we don't want to close the zip file to save all changes here - probably what you needed :-)
         //$this->Close();
