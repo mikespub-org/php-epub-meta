@@ -716,6 +716,59 @@ class EPubTest extends TestCase
     }
 
     /**
+     * @throws Exception
+     * @return void
+     */
+    public function testNavTree()
+    {
+        $test_epub3 = __DIR__ . '/data/eng3.epub';
+        $test_epub3_copy = __DIR__ . '/data/eng3.copy.epub';
+
+        // sometime I might have accidentally broken the test file
+        $this->assertEquals(53216, filesize($test_epub3));
+
+        // we work on a copy to test saving
+        $this->assertTrue(copy($test_epub3, $test_epub3_copy));
+
+        $epub = new EPub($test_epub3_copy);
+
+        $toc = $epub->getNav();
+        $this->assertEquals('Calibre Quick Start Guide', $toc->getDocTitle());
+        $this->assertEquals('John Schember', $toc->getDocAuthor());
+        $navMap = $toc->getNavMap();
+        $this->assertEquals(7, $navMap->count());
+        $this->assertCount(1, $navMap->findNavPointsForFile('text/introduction.xhtml'));
+        $this->assertCount(0, $navMap->findNavPointsForFile('oops/are_we_lost?.xhtml'));
+
+        $navPoint = $navMap->first();
+        /** @var TocNavPoint $navPoint */
+        $this->assertEquals('', $navPoint->getId());
+        $this->assertEquals('h1', $navPoint->getClass());
+        $this->assertEquals('1', $navPoint->getPlayOrder());
+        $this->assertEquals('Calibre Quick Start Guide', $navPoint->getNavLabel());
+        $this->assertEquals('text/internal_titlepage.xhtml', $navPoint->getContentSource());
+        $this->assertCount(0, $navPoint->getChildren());
+
+        $navMap->seek(5);
+        $navPoint = $navMap->current();
+        /** @var TocNavPoint $navPoint */
+        $this->assertEquals('', $navPoint->getId());
+        $this->assertEquals('h1', $navPoint->getClass());
+        $this->assertEquals(6, $navPoint->getPlayOrder());
+        $this->assertEquals('Common Tasks', $navPoint->getNavLabel());
+        $this->assertEquals('text/common_tasks.xhtml', $navPoint->getContentSource());
+        $this->assertCount(6, $navPoint->getChildren());
+        $this->assertEquals('Task 1: Organizing', $navPoint->getChildren()->first()->getNavLabel());
+        $navPoint->getChildren()->next();
+        $childPoint = $navPoint->getChildren()->current();
+        $this->assertEquals('Task 2: Conversion', $childPoint->getNavLabel());
+        $this->assertCount(7, $childPoint->getChildren());
+        $this->assertEquals('Task 6: The e-book viewer', $navPoint->getChildren()->last()->getNavLabel());
+
+        unlink($test_epub3_copy);
+    }
+
+    /**
      * @dataProvider provideContentsTestParameters
      * @param string $referenceStart The expected start of the extracted contents.
      * @param string $referenceEnd The expected end of the extracted contents.

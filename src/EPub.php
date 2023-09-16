@@ -2040,7 +2040,7 @@ class EPub
             $contentNode = $xp->query('ncx:content', $navPointNode)->item(0);
             $contentSource = $contentNode ? $contentNode->getAttribute('src') : '';
             $navPoint = new TocNavPoint($id, $class, $playOrder, $label, $contentSource);
-            $navPointList->addNavPoint($navPoint);
+            $navPointList->append($navPoint);
             $childNavPointNodes = $xp->query('ncx:navPoint', $navPointNode);
             $childNavPoints = $navPoint->getChildren();
 
@@ -2073,7 +2073,7 @@ class EPub
         $this->tocnav = new Nav($title, $author);
 
         $toc = $xpath->query('//x:nav[@epub:type="toc"]')->item(0);
-        $navListNodes = $xpath->query('//x:ol/x:li', $toc);
+        $navListNodes = $xpath->query('x:ol/x:li', $toc);
         if ($navListNodes->length > 0) {
             $this->loadNavList($navListNodes, $this->tocnav->getNavMap(), $xpath);
         }
@@ -2118,7 +2118,7 @@ class EPub
             $class = $className;
             $playOrder = $order;
             $navPoint = new TocNavPoint($id, $class, $playOrder, $label, $contentSource);
-            $navPointList->addNavPoint($navPoint);
+            $navPointList->append($navPoint);
             $childNavPointNodes = $xp->query('x:ol/x:li', $navPointNode);
             $childNavPoints = $navPoint->getChildren();
 
