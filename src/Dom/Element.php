@@ -97,45 +97,6 @@ class Element extends DOMElement
     }
 
     /**
-     * Split given name in namespace prefix and local part
-     *
-     * @deprecated 1.5.0 use splitQualifiedName() instead
-     * @param  string $name
-     * @return array<string>  (namespace, name)
-     */
-    public function splitns($name)
-    {
-        $list = explode(':', $name, 2);
-        if (count($list) < 2) {
-            array_unshift($list, '');
-        }
-        return $list;
-    }
-
-    /**
-     * Simple EPub namespace aware attribute accessor
-     * @deprecated 1.5.0 use getAttrib(), setAttrib() or removeAttrib() instead
-     * @param string $attr
-     * @param string|false|null $value
-     * @return string|void
-     */
-    public function attr($attr, $value = null)
-    {
-        if (!is_null($value)) {
-            if ($value === false) {
-                // delete if false was given
-                $this->removeAttrib($attr);
-            } else {
-                // modify if value was given
-                $this->setAttrib($attr, $value);
-            }
-        } else {
-            // return value if none was given
-            return $this->getAttrib($attr);
-        }
-    }
-
-    /**
      * Simple EPUB namespace aware attribute getter
      * @param string $name
      * @return string

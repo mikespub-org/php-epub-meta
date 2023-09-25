@@ -499,23 +499,6 @@ class EPub
     }
 
     /**
-     * Get or set the book author(s)
-     * @deprecated 1.5.0 use getAuthors() or setAuthors() instead
-     * @param mixed $authors
-     * @return mixed
-     */
-    public function Authors($authors = false)
-    {
-        // set new data
-        if ($authors !== false) {
-            $this->setAuthors($authors);
-        }
-
-        // read current data
-        return $this->getAuthors();
-    }
-
-    /**
      * Set the book author(s)
      *
      * Authors should be given with a "file-as" and a real name. The file as
@@ -593,141 +576,6 @@ class EPub
     }
 
     /**
-     * Set or get the book title
-     *
-     * @deprecated 1.5.0 use getTitle() or setTitle() instead
-     * @param string|bool $title
-     * @return mixed
-     */
-    public function Title($title = false)
-    {
-        return $this->getset('dc:title', $title);
-    }
-
-    /**
-     * Set or get the book's language
-     *
-     * @deprecated 1.5.0 use getLanguage() or setLanguage() instead
-     * @param string|bool $lang
-     * @return mixed
-     */
-    public function Language($lang = false)
-    {
-        return $this->getset('dc:language', $lang);
-    }
-
-    /**
-     * Set or get the book' publisher info
-     *
-     * @deprecated 1.5.0 use getPublisher() or setPublisher() instead
-     * @param string|bool $publisher
-     * @return mixed
-     */
-    public function Publisher($publisher = false)
-    {
-        return $this->getset('dc:publisher', $publisher);
-    }
-
-    /**
-     * Set or get the book's copyright info
-     *
-     * @deprecated 1.5.0 use getCopyright() or setCopyright() instead
-     * @param string|bool $rights
-     * @return mixed
-     */
-    public function Copyright($rights = false)
-    {
-        return $this->getset('dc:rights', $rights);
-    }
-
-    /**
-     * Set or get the book's description
-     *
-     * @deprecated 1.5.0 use getDescription() or setDescription() instead
-     * @param string|bool $description
-     * @return mixed
-     */
-    public function Description($description = false)
-    {
-        return $this->getset('dc:description', $description);
-    }
-
-    /**
-     * Set or get the book's Unique Identifier
-     *
-     * @deprecated 1.5.0 use getUniqueIdentifier() or setUniqueIdentifier() instead
-     * @param string|bool $uuid Unique identifier
-     * @return mixed
-     */
-    public function Uuid($uuid = false)
-    {
-        $nodes = $this->xpath->query('/opf:package');
-        if ($nodes->length !== 1) {
-            $error = sprintf('Cannot find ebook identifier');
-            throw new Exception($error);
-        }
-        $identifier = static::getAttr($nodes, 'unique-identifier');
-
-        $res = $this->getset('dc:identifier', $uuid, 'id', $identifier);
-
-        return $res;
-    }
-
-    /**
-     * Set or get the book's creation date
-     *
-     * @deprecated 1.5.0 use getCreationDate() or setCreationDate() instead
-     * @param string|bool $date Date eg: 2012-05-19T12:54:25Z
-     * @return mixed
-     */
-    public function CreationDate($date = false)
-    {
-        $res = $this->getset('dc:date', $date, 'opf:event', 'creation');
-
-        return $res;
-    }
-
-    /**
-     * Set or get the book's modification date
-     *
-     * @deprecated 1.5.0 use getModificationDate() or setModificationDate() instead
-     * @param string|bool $date Date eg: 2012-05-19T12:54:25Z
-     * @return mixed
-     */
-    public function ModificationDate($date = false)
-    {
-        $res = $this->getset('dc:date', $date, 'opf:event', 'modification');
-
-        return $res;
-    }
-
-    /**
-     * Set or get the book's URI
-     *
-     * @deprecated 1.5.0 use getUri() or setUri() instead
-     * @param string|bool $uri URI
-     * @return mixed
-     */
-    public function Uri($uri = false)
-    {
-        $res = $this->getset('dc:identifier', $uri, 'opf:scheme', 'URI');
-
-        return $res;
-    }
-
-    /**
-     * Set or get the book's ISBN number
-     *
-     * @deprecated 1.5.0 use getIsbn() or setIsbn() instead
-     * @param string|bool $isbn
-     * @return mixed
-     */
-    public function ISBN($isbn = false)
-    {
-        return $this->getset('dc:identifier', $isbn, 'opf:scheme', 'ISBN');
-    }
-
-    /**
      * Set or get the Google Books ID
      *
      * @param string|bool $google
@@ -747,30 +595,6 @@ class EPub
     public function Amazon($amazon = false)
     {
         return $this->getset('dc:identifier', $amazon, 'opf:scheme', 'AMAZON');
-    }
-
-    /**
-     * Set or get the Calibre UUID of the book
-     *
-     * @deprecated 1.5.0 use getCalibre() or setCalibre() instead
-     * @param string|bool $uuid
-     * @return mixed
-     */
-    public function Calibre($uuid = false)
-    {
-        return $this->getset('dc:identifier', $uuid, 'opf:scheme', 'calibre');
-    }
-
-    /**
-     * Set or get the Serie of the book
-     *
-     * @deprecated 1.5.0 use getSeries() or setSeries() instead
-     * @param string|bool $serie
-     * @return mixed
-     */
-    public function Serie($serie = false)
-    {
-        return $this->getset('opf:meta', $serie, 'name', 'calibre:series', 'content');
     }
 
     /**
@@ -795,18 +619,6 @@ class EPub
     }
 
     /**
-     * Set or get the Serie Index of the book
-     *
-     * @deprecated 1.5.0 use getSeriesIndex() or setSeriesIndex() instead
-     * @param string|bool $serieIndex
-     * @return mixed
-     */
-    public function SerieIndex($serieIndex = false)
-    {
-        return $this->getset('opf:meta', $serieIndex, 'name', 'calibre:series_index', 'content');
-    }
-
-    /**
      * Set the Series Index of the book
      *
      * @param string $seriesIndex
@@ -825,27 +637,6 @@ class EPub
     public function getSeriesIndex()
     {
         return $this->getMetaDestination('opf:meta', 'name', 'calibre:series_index', 'content');
-    }
-
-    /**
-     * Set or get the book's subjects (aka. tags)
-     *
-     * Subject should be given as array, but a comma separated string will also
-     * be accepted.
-     *
-     * @deprecated 1.5.0 use getSubjects() or setSubjects() instead
-     * @param array<string>|string|bool $subjects
-     * @return array<mixed>
-     */
-    public function Subjects($subjects = false)
-    {
-        // setter
-        if ($subjects !== false) {
-            $this->setSubjects($subjects);
-        }
-
-        //getter
-        return $this->getSubjects();
     }
 
     /**
@@ -893,29 +684,6 @@ class EPub
             $subjects[] =  $node->nodeValue;
         }
         return $subjects;
-    }
-
-    /**
-     * Read or update the cover data
-     *
-     * When adding a new image this function return no or old data because the
-     * image contents are not in the epub file, yet. The image will be added when
-     * the save() method is called.
-     *
-     * @deprecated 1.5.0 use getCoverInfo() or setCoverInfo() instead
-     * @param  string|bool $path local filesystem path to a new cover image
-     * @param  string|bool $mime mime type of the given file
-     * @return array<mixed>
-     */
-    public function Cover($path = false, $mime = false)
-    {
-        // set cover
-        if ($path !== false) {
-            $this->setCoverInfo($path, $mime);
-        }
-
-        // load cover
-        return $this->getCoverInfo();
     }
 
     /**
@@ -1127,18 +895,6 @@ class EPub
         if (!is_null($item)) {
             $item->setAttrib('opf:properties', 'cover-image');
         }
-    }
-
-    /**
-     * Summary of Cover2
-     * @deprecated 1.5.0 use setCoverFile() instead
-     * @param mixed $path
-     * @param mixed $mime
-     * @return array<mixed>|void
-     */
-    public function Cover2($path = false, $mime = false)
-    {
-        return $this->setCoverFile($path, $mime);
     }
 
     /**
@@ -1617,6 +1373,7 @@ class EPub
      */
     public function setUniqueIdentifier($value)
     {
+        //$nodes = $this->xpath->query('/opf:package');
         $idRef = $this->xpath->document->documentElement->getAttribute('unique-identifier');
         $this->setMeta('dc:identifier', $value, 'id', $idRef);
     }
@@ -1629,6 +1386,7 @@ class EPub
      */
     public function getUniqueIdentifier($normalize = false)
     {
+        //$nodes = $this->xpath->query('/opf:package');
         $idRef = $this->xpath->document->documentElement->getAttribute('unique-identifier');
         $idVal = $this->getMeta('dc:identifier', 'id', $idRef);
         if ($normalize) {

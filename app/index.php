@@ -149,14 +149,14 @@ foreach ($list as $book) {
         <table>
             <tr>
                 <th>Title</th>
-                <td><input type="text" name="title" value="<?php echo htmlspecialchars($epub->Title())?>" /></td>
+                <td><input type="text" name="title" value="<?php echo htmlspecialchars($epub->getTitle())?>" /></td>
             </tr>
             <tr>
                 <th>Authors</th>
                 <td id="authors">
                     <?php
                 $count = 0;
-        foreach ($epub->Authors() as $as => $name) {
+        foreach ($epub->getAuthors() as $as => $name) {
             ?>
                             <p>
                                 <input type="text" name="authorname[<?php echo $count?>]" value="<?php echo htmlspecialchars($name)?>" />
@@ -171,30 +171,30 @@ foreach ($list as $book) {
             <tr>
                 <th>Description<br />
                     <img src="?book=<?php echo htmlspecialchars($_REQUEST['book'])?>&amp;img=1" id="cover" width="90"
-                         class="<?php $c = $epub->Cover();
+                         class="<?php $c = $epub->getCoverInfo();
         echo($c['found'] ? 'hasimg' : 'noimg')?>" />
                 </th>
-                <td><textarea name="description"><?php echo htmlspecialchars($epub->Description())?></textarea></td>
+                <td><textarea name="description"><?php echo htmlspecialchars($epub->getDescription())?></textarea></td>
             </tr>
             <tr>
                 <th>Subjects</th>
-                <td><input type="text" name="subjects"  value="<?php echo htmlspecialchars(join(', ', $epub->Subjects()))?>" /></td>
+                <td><input type="text" name="subjects"  value="<?php echo htmlspecialchars(join(', ', $epub->getSubjects()))?>" /></td>
             </tr>
             <tr>
                 <th>Publisher</th>
-                <td><input type="text" name="publisher" value="<?php echo htmlspecialchars($epub->Publisher())?>" /></td>
+                <td><input type="text" name="publisher" value="<?php echo htmlspecialchars($epub->getPublisher())?>" /></td>
             </tr>
             <tr>
                 <th>Copyright</th>
-                <td><input type="text" name="copyright" value="<?php echo htmlspecialchars($epub->Copyright())?>" /></td>
+                <td><input type="text" name="copyright" value="<?php echo htmlspecialchars($epub->getCopyright())?>" /></td>
             </tr>
             <tr>
                 <th>Language</th>
-                <td><p><input type="text" name="language"  value="<?php echo htmlspecialchars($epub->Language())?>" /></p></td>
+                <td><p><input type="text" name="language"  value="<?php echo htmlspecialchars($epub->getLanguage())?>" /></p></td>
             </tr>
             <tr>
                 <th>ISBN</th>
-                <td><p><input type="text" name="isbn"      value="<?php echo htmlspecialchars($epub->ISBN())?>" /></p></td>
+                <td><p><input type="text" name="isbn"      value="<?php echo htmlspecialchars($epub->getISBN())?>" /></p></td>
             </tr>
             <tr>
                 <th>Cover Image</th>
