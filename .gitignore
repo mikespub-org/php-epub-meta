@@ -2,3 +2,6 @@ coverage/
 vendor/
 clover.xml
 *.cache
+.pnp.cjs
+.yarn/
+yarn.lock
