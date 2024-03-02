@@ -703,7 +703,7 @@ class EPub
         $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="cover"]');
         static::deleteNodes($nodes);
         // remove previous manifest entries if they where made by us
-        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="'. static::COVER_ID . '"]');
+        $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="' . static::COVER_ID . '"]');
         static::deleteNodes($nodes);
 
         // add pointer
@@ -1935,7 +1935,7 @@ class EPub
      */
     protected static function buildMetaXPath($element, $attribute, $value, $caseSensitive = true)
     {
-        $xpath = '//opf:metadata/'.$element;
+        $xpath = '//opf:metadata/' . $element;
         if ($attribute) {
             $xpath .= "[@$attribute";
             if ($value) {

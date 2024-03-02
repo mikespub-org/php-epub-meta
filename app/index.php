@@ -48,7 +48,7 @@ if (isset($_REQUEST['save']) && isset($epub)) {
     $epub->setSubjects($_POST['subjects']);
 
     $authors = [];
-    foreach ((array)$_POST['authorname'] as $num => $name) {
+    foreach ((array) $_POST['authorname'] as $num => $name) {
         if ($name) {
             $as = $_POST['authoras'][$num];
             if (!$as) {

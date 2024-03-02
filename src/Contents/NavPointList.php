@@ -13,9 +13,7 @@ use ArrayIterator;
  */
 class NavPointList extends ArrayIterator
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * @return NavPoint

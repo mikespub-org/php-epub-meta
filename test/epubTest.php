@@ -413,7 +413,7 @@ class EPubTest extends TestCase
         $titlePage = $spine->first();
         $this->assertEquals(EPub::TITLE_PAGE_ID . '.xhtml', $titlePage->getHref());
         $this->assertEquals(EPub::TITLE_PAGE_ID, $titlePage->getId());
-        $this->assertEquals('application/xhtml+xml', (string)$titlePage->getMediaType());
+        $this->assertEquals('application/xhtml+xml', (string) $titlePage->getMediaType());
 
         // We expect an empty string since there is only an image but no text on that page.
         $this->assertEmpty(trim($titlePage->getContents()));
@@ -623,7 +623,7 @@ class EPubTest extends TestCase
      * Summary of provideContentsTestParameters
      * @return array<mixed>
      */
-    public function provideContentsTestParameters()
+    public static function provideContentsTestParameters()
     {
         return [
             ["Romeo and Juliet\n\nWilliam Shakespeare", "www.feedbooks.com\n\n    Food for the mind", 152879, false, 1],
@@ -659,7 +659,7 @@ class EPubTest extends TestCase
      * Summary of provideItemContentsTestParameters
      * @return array<mixed>
      */
-    public function provideItemContentsTestParameters()
+    public static function provideItemContentsTestParameters()
     {
         return [
             ['Act I', 'our toil shall strive to mend.', 3],
@@ -718,7 +718,7 @@ class EPubTest extends TestCase
      * Summary of provideItemContentsMarkupTestParameters
      * @return array<mixed>
      */
-    public function provideItemContentsMarkupTestParameters()
+    public static function provideItemContentsMarkupTestParameters()
     {
         return [
             [static::MARKUP_XML_1, 3],

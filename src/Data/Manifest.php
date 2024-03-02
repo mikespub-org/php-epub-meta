@@ -82,7 +82,7 @@ class Manifest implements Iterator, Countable, ArrayAccess
      */
     public function valid(): bool
     {
-        return (bool)current($this->items);
+        return (bool) current($this->items);
     }
 
     /**

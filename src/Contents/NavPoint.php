@@ -80,7 +80,7 @@ class NavPoint
      */
     public function getContentSource()
     {
-        return $this->contentSourceFile.($this->contentSourceFragment ? '#'.$this->contentSourceFragment : '');
+        return $this->contentSourceFile . ($this->contentSourceFragment ? '#' . $this->contentSourceFragment : '');
     }
 
     /**
