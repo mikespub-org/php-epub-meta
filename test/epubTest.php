@@ -425,6 +425,53 @@ class EPubTest extends TestCase
      * @throws Exception
      * @return void
      */
+    public function testCalibreAnnotations()
+    {
+        $epub = new Epub(static::TEST_EPUB);
+        // use metadata from .opf file for tests here - see Alice from mikespub/seblucas-cops
+        $data = file_get_contents(__DIR__ . '/data/metadata.opf');
+        $annotations = $epub->getCalibreAnnotations($data);
+        $this->assertCount(5, $annotations);
+        $expected = [
+            'format' => 'EPUB',
+            'user_type' => 'local',
+            'user' => 'viewer',
+            'annotation' => [
+                'title' => 'About #1',
+                'pos_type' => 'epubcfi',
+                'pos' => 'epubcfi(/6/2/4/2/6/2:38)',
+                'timestamp' => '2024-03-11T11:54:35.128396+00:00',
+                'type' => 'bookmark',
+            ],
+        ];
+        $this->assertEquals($expected, $annotations[0]);
+    }
+
+    /**
+     * @throws Exception
+     * @return void
+     */
+    public function testCalibreBookmarks()
+    {
+        $epub = new Epub(static::TEST_EPUB);
+        // use calibre_bookmarks.txt for tests here - see Alice from mikespub/seblucas-cops
+        $data = file_get_contents(__DIR__ . '/data/calibre_bookmarks.txt');
+        $bookmarks = $epub->getCalibreBookmarks($data);
+        $this->assertCount(5, $bookmarks);
+        $expected = [
+            'title' => 'About #1',
+            'pos_type' => 'epubcfi',
+            'pos' => 'epubcfi(/6/2/4/2/6/2:38)',
+            'timestamp' => '2024-03-11T11:54:35.128396+00:00',
+            'type' => 'bookmark',
+        ];
+        $this->assertEquals($expected, $bookmarks[0]);
+    }
+
+    /**
+     * @throws Exception
+     * @return void
+     */
     public function testManifest()
     {
         $manifest = $this->epub->getManifest();
@@ -467,6 +514,8 @@ class EPubTest extends TestCase
      */
     public function testToc()
     {
+        $this->assertEquals(2, $this->epub->getEpubVersion());
+
         $toc = $this->epub->getToc();
         $this->assertEquals('Romeo and Juliet', $toc->getDocTitle());
         $this->assertEquals('Shakespeare, William', $toc->getDocAuthor());
@@ -512,6 +561,7 @@ class EPubTest extends TestCase
         $this->assertTrue(copy($test_epub3, $test_epub3_copy));
 
         $epub = new EPub($test_epub3_copy);
+        $this->assertEquals(3, $epub->getEpubVersion());
 
         $toc = $epub->getNav();
         $this->assertEquals('nav-non-text_img_title', $toc->getDocTitle());

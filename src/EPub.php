@@ -24,6 +24,7 @@ use DOMElement;
 use DOMNodeList;
 use Exception;
 use InvalidArgumentException;
+use JsonException;
 use ZipArchive;
 
 class EPub
@@ -34,6 +35,8 @@ class EPub
     public const TITLE_PAGE_ID = 'php-epub-meta-titlepage';
     public const METADATA_FILE = 'META-INF/container.xml';
     public const MIME_TYPE = 'application/epub+zip';
+    public const BOOKMARK_FILE = 'META-INF/calibre_bookmarks.txt';
+    public const EPUB_FILE_TYPE_MAGIC = "encoding=json+base64:\n";
     /** @var array<int, array<string>> */
     public static $encodeNameReplace = [
         ['/', '-'],
@@ -145,13 +148,23 @@ class EPub
         if (!$data) {
             throw new Exception('Failed to access epub metadata');
         }
+        $this->loadXmlData($data);
+
+        $this->zipSizeMap = $this->loadSizeMap($this->file);
+    }
+
+    /**
+     * Summary of loadXmlData
+     * @param string $data
+     * @return void
+     */
+    public function loadXmlData($data)
+    {
         $this->xml =  new DOMDocument();
         $this->xml->registerNodeClass(DOMElement::class, EpubDomElement::class);
         $this->xml->loadXML($data);
         $this->xml->formatOutput = true;
         $this->xpath = new EpubDomXPath($this->xml);
-
-        $this->zipSizeMap = $this->loadSizeMap($this->file);
     }
 
     /**
@@ -172,12 +185,7 @@ class EPub
                 throw new Exception('Unable to find ' . $navpath);
             }
             $data = $this->zip->FileRead($navpath);
-            $this->nav = new DOMDocument();
-            $this->nav->registerNodeClass(DOMElement::class, EpubDomElement::class);
-            $this->nav->loadXML($data);
-            $this->nav_xpath = new EpubDomXPath($this->nav);
-            $rootNamespace = $this->nav->lookupNamespaceUri($this->nav->namespaceURI);
-            $this->nav_xpath->registerNamespace('x', $rootNamespace);
+            $this->loadNavData($data);
             return;
         }
         $nodes = $this->xpath->query('//opf:manifest/opf:item[@id="' . $tocid . '"]');
@@ -189,6 +197,31 @@ class EPub
         }
 
         $data = $this->zip->FileRead($tocpath);
+        $this->loadTocData($data);
+    }
+
+    /**
+     * Summary of loadNavData
+     * @param string $data
+     * @return void
+     */
+    public function loadNavData($data)
+    {
+        $this->nav = new DOMDocument();
+        $this->nav->registerNodeClass(DOMElement::class, EpubDomElement::class);
+        $this->nav->loadXML($data);
+        $this->nav_xpath = new EpubDomXPath($this->nav);
+        $rootNamespace = $this->nav->lookupNamespaceUri($this->nav->namespaceURI);
+        $this->nav_xpath->registerNamespace('x', $rootNamespace);
+    }
+
+    /**
+     * Summary of loadTocData
+     * @param string $data
+     * @return void
+     */
+    public function loadTocData($data)
+    {
         $this->toc = new DOMDocument();
         $this->toc->registerNodeClass(DOMElement::class, EpubDomElement::class);
         $this->toc->loadXML($data);
@@ -1649,6 +1682,62 @@ class EPub
         // remove title page guide reference
         $nodes = $this->xpath->query('//opf:guide/opf:reference[@href="' . $xhtmlFilename . '"]');
         static::deleteNodes($nodes);
+    }
+
+    /**
+     * Get the Calibre book annotations from opf:metadata (if saved)
+     * @param ?string $data
+     * @return array<mixed>
+     */
+    public function getCalibreAnnotations($data = null)
+    {
+        if (!empty($data)) {
+            $this->loadXmlData($data);
+        }
+        $annotations = [];
+        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="calibre:annotation"]');
+        if ($nodes->length == 0) {
+            return $annotations;
+        }
+        foreach ($nodes as $node) {
+            /** @var EpubDomElement $node */
+            $content = $node->getAttribute('content');
+            try {
+                $annotations[] = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException $e) {
+                $annotations[] = $content;
+            }
+        }
+        return $annotations;
+    }
+
+    /**
+     * Get the Calibre bookmarks from META-INF/calibre_bookmarks.txt (if saved)
+     * @param ?string $data
+     * @return array<mixed>
+     */
+    public function getCalibreBookmarks($data = null)
+    {
+        if (empty($data)) {
+            if (!$this->zip->FileExists(static::BOOKMARK_FILE)) {
+                throw new Exception('Unable to find ' . static::BOOKMARK_FILE);
+            }
+            $data = $this->zip->FileRead(static::BOOKMARK_FILE);
+            if ($data == false) {
+                throw new Exception('Failed to access epub bookmark file');
+            }
+        }
+        if (!str_starts_with($data, static::EPUB_FILE_TYPE_MAGIC)) {
+            throw new Exception('Invalid format for epub bookmark file');
+        }
+        $content = substr($data, strlen(static::EPUB_FILE_TYPE_MAGIC));
+        $content = base64_decode($content);
+        try {
+            $bookmarks = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            $bookmarks = $content;
+        }
+        return $bookmarks;
     }
 
     /**
