@@ -4,7 +4,7 @@ PHP EPub Meta
 ## Prerequisites for this fork
 
 - PHP 8.x with DOM, Json, XML, XMLWriter and ZLib support (PHP 8.1 or later recommended)
-- Release 2.x.x will only work with PHP >= 8.1 - typical for most source code & docker image installs in 2023 and later
+- Release 2.x.x will only work with PHP >= 8.1 - typical for most source code & docker image installs in 2023 and later. *Note: updating .epub files for metadata or cover requires a 64-bit platform*
 - Release 1.x.x still works with PHP 7.4 if necessary - earlier PHP 7.x (or 5.x) versions are *not* supported with this fork
 
 This package is used by [mikespub/seblucas-cops](https://packagist.org/packages/mikespub/seblucas-cops) and [mikespub/epub-loader](https://packagist.org/packages/mikespub/epub-loader) with the same PHP version restrictions for 1.x and 2.x releases
