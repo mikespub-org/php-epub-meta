@@ -1,6 +1,15 @@
 <?php
+/**
+ * PHP EPub Meta - App public entrypoint
+ *
+ * @author Andreas Gohr <andi@splitbrain.org>
+ * @author Sébastien Lucas <sebastien@slucas.fr>
+ * @author Simon Schrape <simon@epubli.com> © 2015
+ * @author mikespub
+ */
 
 use SebLucas\EPubMeta\EPub;
+use SebLucas\EPubMeta\App\Util;
 use SebLucas\EPubMeta\Tools\ZipEdit;
 
 // modify this to point to your book directory
@@ -15,7 +24,6 @@ if (isset($_GET['api'])) {
 }
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
-require_once __DIR__ . '/util.php';
 
 $epub = null;
 $error = null;
@@ -96,7 +104,7 @@ if (isset($_REQUEST['save']) && isset($epub)) {
         // rename
         $author = array_keys($epub->getAuthors())[0];
         $title  = $epub->getTitle();
-        $new    = to_file($author . '-' . $title);
+        $new    = Util::to_file($author . '-' . $title);
         $new    = $bookdir . $new . '.epub';
         $old    = $epub->file();
         if (realpath($new) != realpath($old)) {
@@ -110,119 +118,59 @@ if (isset($_REQUEST['save']) && isset($epub)) {
     }
 }
 
-header('Content-Type: text/html; charset=utf-8');
-?>
-<html>
-<head>
-    <title>EPub Manager</title>
-
-    <link rel="stylesheet" type="text/css" href="../assets/css/smoothness/jquery-ui-1.13.2.custom.min.css" />
-    <link rel="stylesheet" type="text/css" href="../assets/css/cleditor/jquery.cleditor-1.4.5.css" />
-    <link rel="stylesheet" type="text/css" href="../assets/css/style.css" />
-
-    <script type="text/javascript">
-        <?php if($error) {
-            echo "alert('" . htmlspecialchars($error) . "');";
-        }?>
-    </script>
-</head>
-<body>
-
-<div id="wrapper">
-    <ul id="booklist">
-        <?php
-            $list = glob($bookdir . '/*.epub');
+$data = [
+    'bookdir' => '',
+    'booklist' => '',
+    'license' => '',
+    'alert' => '',
+];
+$data['bookdir'] = htmlspecialchars($bookdir);
+$data['booklist'] = '';
+$list = glob($bookdir . '/*.epub');
 foreach ($list as $book) {
     $base = basename($book, '.epub');
-    $name = book_output($base);
-    echo '<li ' . ($base == $_REQUEST['book'] ? 'class="active"' : '') . '>';
-    echo '<a href="?book=' . htmlspecialchars($base) . '">' . $name . '</a>';
-    echo '</li>';
+    $name = Util::book_output($base);
+    $data['booklist'] .= '<li ' . ($base == $_REQUEST['book'] ? 'class="active"' : '') . '>';
+    $data['booklist'] .= '<a href="?book=' . htmlspecialchars($base) . '">' . $name . '</a>';
+    $data['booklist'] .= '</li>';
 }
-?>
-    </ul>
+if ($error) {
+    $data['alert'] = "alert('" . htmlspecialchars($error) . "');";
+}
 
-    <?php if($epub): ?>
-    <form action="" method="post" id="bookpanel" enctype="multipart/form-data">
-        <input type="hidden" name="book" value="<?php echo htmlspecialchars($_REQUEST['book'])?>" />
+if (empty($epub)) {
+    $data['license'] = str_replace("\n\n", '</p><p>', htmlspecialchars(file_get_contents(dirname(__DIR__) . '/LICENSE')));
 
-        <table>
-            <tr>
-                <th>Title</th>
-                <td><input type="text" name="title" value="<?php echo htmlspecialchars($epub->getTitle())?>" /></td>
-            </tr>
-            <tr>
-                <th>Authors</th>
-                <td id="authors">
-                    <?php
-                $count = 0;
-        foreach ($epub->getAuthors() as $as => $name) {
-            ?>
-                            <p>
-                                <input type="text" name="authorname[<?php echo $count?>]" value="<?php echo htmlspecialchars($name)?>" />
-                                (<input type="text" name="authoras[<?php echo $count?>]" value="<?php echo htmlspecialchars($as)?>" />)
-                            </p>
-                    <?php
-                    $count++;
-        }
-        ?>
-                </td>
-            </tr>
-            <tr>
-                <th>Description<br />
-                    <img src="?book=<?php echo htmlspecialchars($_REQUEST['book'])?>&amp;img=1" id="cover" width="90"
-                         class="<?php $c = $epub->getCoverInfo();
-        echo($c['found'] ? 'hasimg' : 'noimg')?>" />
-                </th>
-                <td><textarea name="description"><?php echo htmlspecialchars($epub->getDescription())?></textarea></td>
-            </tr>
-            <tr>
-                <th>Subjects</th>
-                <td><input type="text" name="subjects"  value="<?php echo htmlspecialchars(join(', ', $epub->getSubjects()))?>" /></td>
-            </tr>
-            <tr>
-                <th>Publisher</th>
-                <td><input type="text" name="publisher" value="<?php echo htmlspecialchars($epub->getPublisher())?>" /></td>
-            </tr>
-            <tr>
-                <th>Copyright</th>
-                <td><input type="text" name="copyright" value="<?php echo htmlspecialchars($epub->getCopyright())?>" /></td>
-            </tr>
-            <tr>
-                <th>Language</th>
-                <td><p><input type="text" name="language"  value="<?php echo htmlspecialchars($epub->getLanguage())?>" /></p></td>
-            </tr>
-            <tr>
-                <th>ISBN</th>
-                <td><p><input type="text" name="isbn"      value="<?php echo htmlspecialchars($epub->getISBN())?>" /></p></td>
-            </tr>
-            <tr>
-                <th>Cover Image</th>
-                <td><p>
-                    <input type="file" name="coverfile" />
-                    URL: <input type="text" name="coverurl" value="" />
-                </p></td>
-        </table>
-        <div class="center">
-            <input name="save" type="submit" />
-        </div>
-    </form>
-    <?php else: ?>
-    <h1>EPub Manager</h1>
+    $content = file_get_contents(dirname(__DIR__) . '/templates/index.html');
+} else {
+    $data['book'] = htmlspecialchars($_REQUEST['book']);
+    $data['title'] = htmlspecialchars($epub->getTitle());
+    $data['authors'] = '';
+    $count = 0;
+    foreach ($epub->getAuthors() as $as => $name) {
+        $data['authors'] .= '<p>';
+        $data['authors'] .= '<input type="text" name="authorname[' . $count . ']" value="' . htmlspecialchars($name) . '" />';
+        $data['authors'] .= ' (<input type="text" name="authoras[' . $count . ']" value="' . htmlspecialchars($as) . '" />)';
+        $data['authors'] .= '</p>';
+        $count++;
+    }
+    $data['cover'] = '?book=' . htmlspecialchars($_REQUEST['book']) . '&amp;img=1';
+    $c = $epub->getCoverInfo();
+    $data['imgclass'] = $c['found'] ? 'hasimg' : 'noimg';
+    $data['description'] = htmlspecialchars($epub->getDescription());
+    $data['subjects'] = htmlspecialchars(join(', ', $epub->getSubjects()));
+    $data['publisher'] = htmlspecialchars($epub->getPublisher());
+    $data['copyright'] = htmlspecialchars($epub->getCopyright());
+    $data['language'] = htmlspecialchars($epub->getLanguage());
+    $data['isbn'] = htmlspecialchars($epub->getISBN());
 
-    <p>View and edit epub books stored in <code><?php echo htmlspecialchars($bookdir)?></code>.</p>
-    <div class="license">
-    <p><?php echo str_replace("\n\n", '</p><p>', htmlspecialchars(file_get_contents('LICENSE'))) ?></p>
-    </div>
+    $content = file_get_contents(dirname(__DIR__) . '/templates/epub.html');
+}
 
-    <?php endif; ?>
+foreach ($data as $name => $value) {
+    $content = preg_replace('/{{\s*' . $name . '\s*}}/', $value, $content);
+}
 
-    <!-- load at the end, for faster site load -->
-    <script type="text/javascript" src="../assets/js/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" src="../assets/js/jquery-ui-1.13.2.custom.min.js"></script>
-    <script type="text/javascript" src="../assets/js/jquery.cleditor-1.4.5.min.js"></script>
-    <script type="text/javascript" src="../assets/js/script.js"></script>
-
-</div>
-</body>
-</html>
+header('Content-Type: text/html; charset=utf-8');
+echo $content;
+exit;

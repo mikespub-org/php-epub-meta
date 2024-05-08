@@ -5,3 +5,4 @@ clover.xml
 .pnp.cjs
 .yarn/
 yarn.lock
+.yarnrc.yml
