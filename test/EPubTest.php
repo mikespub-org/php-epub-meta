@@ -365,6 +365,7 @@ class EPubTest extends TestCase
 
         // read current cover
         $cover = $epub->getCover();
+        $this->assertIsString($cover);
         $this->assertEquals(657911, strlen($cover));
 
         // change cover and save
@@ -376,6 +377,7 @@ class EPubTest extends TestCase
 
         // read recently changed cover
         $cover = $epub->getCover();
+        $this->assertIsString($cover);
         $this->assertEquals(filesize(static::TEST_IMAGE), strlen($cover));
 
         // delete cover
@@ -647,7 +649,6 @@ class EPubTest extends TestCase
     }
 
     /**
-     * @dataProvider provideContentsTestParameters
      * @param string $referenceStart The expected start of the extracted contents.
      * @param string $referenceEnd The expected end of the extracted contents.
      * @param int $referenceSize The expected size of the extracted contents.
@@ -656,6 +657,7 @@ class EPubTest extends TestCase
      * @throws Exception
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('provideContentsTestParameters')]
     public function testContents(
         $referenceStart,
         $referenceEnd,
@@ -683,7 +685,6 @@ class EPubTest extends TestCase
     }
 
     /**
-     * @dataProvider provideItemContentsTestParameters
      * @param string $referenceStart The expected start of the extracted contents.
      * @param string $referenceEnd The expected end of the extracted contents.
      * @param string $spineIndex The spine index of the item to extract contents from.
@@ -692,6 +693,7 @@ class EPubTest extends TestCase
      * @throws Exception
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('provideItemContentsTestParameters')]
     public function testItemContents(
         $referenceStart,
         $referenceEnd,
@@ -737,7 +739,6 @@ class EPubTest extends TestCase
     }
 
     /**
-     * @dataProvider provideItemContentsMarkupTestParameters
      * @param string $referenceFile
      * @param string $spineIndex
      * @param string $fragmentBegin
@@ -745,6 +746,7 @@ class EPubTest extends TestCase
      * @throws Exception
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('provideItemContentsMarkupTestParameters')]
     public function testItemContentsMarkup($referenceFile, $spineIndex, $fragmentBegin = null, $fragmentEnd = null)
     {
         $spine = $this->epub->getSpine();

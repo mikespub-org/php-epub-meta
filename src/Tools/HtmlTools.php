@@ -39,7 +39,7 @@ class HtmlTools
             if (is_string($length)) {
                 $length = trim($length);
                 /* interpret percentage value */
-                if (substr($length, -1) == '%') {
+                if (str_ends_with($length, '%')) {
                     $length = (int) (strlen($htmlString) * intval(substr($length, 0, -1)) / 100);
                 }
             }
@@ -77,7 +77,7 @@ class HtmlTools
 
             /* @TODO: remove style tags and only keep body content (drop head) */
             $tempFunc = function ($matches) use ($keep) {
-                $htmlNode = "<" . $matches[1] . ">" . strip_tags($matches[2]) . "</" . $matches[1] . ">";
+                $htmlNode = "<" . $matches[1] . ">" . strip_tags((string) $matches[2]) . "</" . $matches[1] . ">";
                 if (in_array($matches[1], $keep)) {
                     return " " . $htmlNode . " ";
                 } else {
@@ -89,7 +89,7 @@ class HtmlTools
             $regExp = '@<(' . $allowedTags . ')[^>]*?>(.*?)<\/\1>@i';
             $htmlString = preg_replace_callback($regExp, $tempFunc, $htmlString);
 
-            $htmlString = strip_tags($htmlString, "<" . implode("><", $keep) . ">");
+            $htmlString = strip_tags((string) $htmlString, "<" . implode("><", $keep) . ">");
         }
         /* preserve injected variable cast type (string|array) when returning processed entity */
         return is_array($html) ? $htmls : array_pop($htmls);

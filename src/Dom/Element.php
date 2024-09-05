@@ -54,12 +54,10 @@ class Element extends DOMElement
      */
     public function __get($name)
     {
-        switch ($name) {
-            case 'nodeValueUnescaped':
-                return htmlspecialchars_decode($this->nodeValue);
-        }
-
-        return null;
+        return match ($name) {
+            'nodeValueUnescaped' => htmlspecialchars_decode((string) $this->nodeValue),
+            default => null,
+        };
     }
 
     /**
@@ -72,7 +70,7 @@ class Element extends DOMElement
     {
         switch ($name) {
             case 'nodeValueUnescaped':
-                $this->nodeValue = htmlspecialchars($value);
+                $this->nodeValue = htmlspecialchars((string) $value);
         }
     }
 
@@ -116,7 +114,7 @@ class Element extends DOMElement
     /**
      * Simple EPUB namespace aware attribute setter
      * @param string $name
-     * @param mixed $value
+     * @param string $value
      * @return void
      */
     public function setAttrib($name, $value)

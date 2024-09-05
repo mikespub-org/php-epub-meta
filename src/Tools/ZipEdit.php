@@ -105,7 +105,7 @@ class ZipEdit
      *
      * @param string $inFileName File to search
      *
-     * @return mixed File content the file exist, else false
+     * @return string|bool File content the file exist, else false
      */
     public function FileRead($inFileName)
     {
@@ -163,7 +163,7 @@ class ZipEdit
     /**
      * Summary of FileAdd
      * @param string $inFileName
-     * @param mixed $inData
+     * @param string $inData
      * @return bool
      */
     public function FileAdd($inFileName, $inData)
@@ -246,7 +246,7 @@ class ZipEdit
 
     /**
      * Return the state of the file.
-     * @param mixed $inFileName
+     * @param string $inFileName
      * @return string|bool 'u'=unchanged, 'm'=modified, 'd'=deleted, 'a'=added, false=unknown
      */
     public function FileGetState($inFileName)
@@ -326,9 +326,9 @@ class ZipEdit
 
     /**
      * Summary of Flush
-     * @param mixed $render
-     * @param mixed $outFileName
-     * @param mixed $contentType
+     * @param int $render
+     * @param string $outFileName
+     * @param string $contentType
      * @param bool $sendHeaders
      * @param resource|null $outFileStream
      * @return void
@@ -353,7 +353,7 @@ class ZipEdit
         }
 
         $outZipStream = new ZipStream(
-            outputName: basename($outFileName),
+            outputName: basename((string) $outFileName),
             outputStream: $outFileStream,
             sendHttpHeaders: $sendHeaders,
             contentType: $contentType,

@@ -120,7 +120,7 @@ class Item
         while ($node && (!$fragmentEnd || !$node->hasAttributes() || $node->getAttribute('id') != $fragmentEnd)) {
             if ($node instanceof DOMText) {
                 // when encountering a text node append its value to the contents
-                $contents .= $keepMarkup ? htmlspecialchars($node->nodeValue) : $node->nodeValue;
+                $contents .= $keepMarkup ? htmlspecialchars((string) $node->nodeValue) : $node->nodeValue;
             } elseif ($node instanceof DOMElement) {
                 $tag = $node->localName;
                 if ($keepMarkup && in_array($tag, $allowableTags)) {

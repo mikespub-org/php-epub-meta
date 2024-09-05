@@ -79,6 +79,7 @@ class MonocleTest extends TestCase
     public function testComponent($component = 'text/titlepage.xhtml')
     {
         $data = self::$book->component($component);
+        $this->assertIsString($data);
         $check = 641;
         $this->assertEquals($check, strlen($data));
     }

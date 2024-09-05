@@ -113,7 +113,7 @@ class ZipFile
      *
      * @param string $inFileName File to search
      *
-     * @return mixed File content the file exist, else false
+     * @return string|bool File content the file exist, else false
      */
     public function FileRead($inFileName)
     {
@@ -171,7 +171,7 @@ class ZipFile
     /**
      * Summary of FileAdd
      * @param string $inFileName
-     * @param mixed $inData
+     * @param string $inData
      * @return bool
      */
     public function FileAdd($inFileName, $inData)
@@ -192,7 +192,7 @@ class ZipFile
      * Summary of FileAddPath
      * @param string $inFileName
      * @param string $inFilePath
-     * @return mixed
+     * @return bool
      */
     public function FileAddPath($inFileName, $inFilePath)
     {
@@ -254,7 +254,7 @@ class ZipFile
 
     /**
      * Return the state of the file.
-     * @param mixed $inFileName
+     * @param string $inFileName
      * @return string|bool 'u'=unchanged, 'm'=modified, 'd'=deleted, 'a'=added, false=unknown
      */
     public function FileGetState($inFileName)
@@ -306,9 +306,9 @@ class ZipFile
 
     /**
      * Summary of Flush
-     * @param mixed $render
-     * @param mixed $outFileName
-     * @param mixed $contentType
+     * @param int $render
+     * @param string $outFileName
+     * @param string $contentType
      * @param bool $sendHeaders
      * @return void
      */
@@ -331,7 +331,7 @@ class ZipFile
             header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $expires) . ' GMT');
 
             header('Content-Type: ' . $contentType);
-            header('Content-Disposition: attachment; filename="' . basename($outFileName) . '"');
+            header('Content-Disposition: attachment; filename="' . basename((string) $outFileName) . '"');
 
             // see fetch.php for use of Config::get('x_accel_redirect')
             header('Content-Length: ' . filesize($inFilePath));

@@ -18,8 +18,8 @@ class Handler
 {
     protected string $bookdir;
     protected string $rootdir;
-    protected ?EPub $epub;
-    protected ?string $error;
+    protected ?EPub $epub = null;
+    protected ?string $error = null;
 
     public function __construct(string $bookdir)
     {
@@ -110,7 +110,7 @@ class Handler
      */
     protected function getEpubData($epub, $data = [])
     {
-        $data['book'] = htmlspecialchars($_REQUEST['book']);
+        $data['book'] = htmlspecialchars((string) $_REQUEST['book']);
         $data['title'] = htmlspecialchars($epub->getTitle());
         $data['authors'] = '';
         $count = 0;
@@ -121,7 +121,7 @@ class Handler
             $data['authors'] .= '</p>';
             $count++;
         }
-        $data['cover'] = '?book=' . htmlspecialchars($_REQUEST['book']) . '&amp;img=1';
+        $data['cover'] = '?book=' . htmlspecialchars((string) $_REQUEST['book']) . '&amp;img=1';
         $c = $epub->getCoverInfo();
         $data['imgclass'] = $c['found'] ? 'hasimg' : 'noimg';
         $data['description'] = htmlspecialchars($epub->getDescription());
@@ -162,14 +162,14 @@ class Handler
 
         // handle image
         $cover = '';
-        if (preg_match('/^https?:\/\//i', $_POST['coverurl'])) {
+        if (preg_match('/^https?:\/\//i', (string) $_POST['coverurl'])) {
             $data = @file_get_contents($_POST['coverurl']);
             if ($data) {
                 $cover = tempnam(sys_get_temp_dir(), 'epubcover');
                 file_put_contents($cover, $data);
                 unset($data);
             }
-        } elseif(is_uploaded_file($_FILES['coverfile']['tmp_name'])) {
+        } elseif (is_uploaded_file($_FILES['coverfile']['tmp_name'])) {
             $cover = $_FILES['coverfile']['tmp_name'];
         }
         if ($cover) {

@@ -21,6 +21,7 @@ use SebLucas\EPubMeta\Tools\ZipEdit;
 use SebLucas\EPubMeta\Tools\ZipFile;
 use DOMDocument;
 use DOMElement;
+use DOMNode;
 use DOMNodeList;
 use Exception;
 use InvalidArgumentException;
@@ -66,8 +67,6 @@ class EPub
     protected $zip;
     protected string $zipClass;
     protected string $coverpath = '';
-    /** @var mixed */
-    protected $namespaces;
     protected string $imagetoadd = '';
     /** @var array<mixed> A map of ZIP items mapping filenames to file sizes */
     protected $zipSizeMap;
@@ -310,7 +309,7 @@ class EPub
 
     /**
      * Get the updated epub
-     * @param mixed $file
+     * @param string|bool $file
      * @param bool $sendHeaders
      * @return void
      */
@@ -343,19 +342,19 @@ class EPub
             $idref =  $node->getAttribute('idref');
             /** @var EpubDomElement $item */
             $item = $this->xpath->query('//opf:manifest/opf:item[@id="' . $idref . '"]')->item(0);
-            $spine[] = $this->encodeComponentName($item->getAttribute('href'));
+            $spine[] = static::encodeComponentName($item->getAttribute('href'));
         }
         return $spine;
     }
 
     /**
      * Get the component content
-     * @param mixed $comp
-     * @return mixed
+     * @param string $comp
+     * @return string|false
      */
     public function component($comp)
     {
-        $path = $this->decodeComponentName($comp);
+        $path = static::decodeComponentName($comp);
         $path = $this->getFullPath($path);
         if (!$this->zip->FileExists($path)) {
             $status = $this->zip->FileGetState($path);
@@ -368,13 +367,13 @@ class EPub
 
     /**
      * Summary of getComponentName
-     * @param mixed $comp
-     * @param mixed $elementPath
+     * @param string $comp
+     * @param string $elementPath
      * @return bool|string
      */
     public function getComponentName($comp, $elementPath)
     {
-        $path = $this->decodeComponentName($comp);
+        $path = static::decodeComponentName($comp);
         $path = $this->getFullPath($path, $elementPath);
         if (!$this->zip->FileExists($path)) {
             error_log('Unable to find ' . $path);
@@ -386,12 +385,12 @@ class EPub
         if (strlen($ref) > 0) {
             $path = str_replace($ref . '/', '', $path);
         }
-        return $this->encodeComponentName($path);
+        return static::encodeComponentName($path);
     }
 
     /**
      * Encode the component name (to replace / and -)
-     * @param mixed $src
+     * @param string $src
      * @return string
      */
     protected static function encodeComponentName($src)
@@ -405,7 +404,7 @@ class EPub
 
     /**
      * Decode the component name (to replace / and -)
-     * @param mixed $src
+     * @param string $src
      * @return string
      */
     protected static function decodeComponentName($src)
@@ -420,12 +419,12 @@ class EPub
 
     /**
      * Get the component content type
-     * @param mixed $comp
+     * @param string $comp
      * @return string
      */
     public function componentContentType($comp)
     {
-        $comp = $this->decodeComponentName($comp);
+        $comp = static::decodeComponentName($comp);
         $nodes = $this->xpath->query('//opf:manifest/opf:item[@href="' . $comp . '"]');
         if ($nodes->length) {
             return static::getAttr($nodes, 'media-type');
@@ -442,12 +441,12 @@ class EPub
 
     /**
      * Summary of getComponentSize
-     * @param mixed $comp
+     * @param string $comp
      * @return bool|int
      */
     public function getComponentSize($comp)
     {
-        $path = $this->decodeComponentName($comp);
+        $path = static::decodeComponentName($comp);
         $path = $this->getFullPath($path);
         if (!$this->zip->FileExists($path)) {
             error_log('Unable to find ' . $path);
@@ -461,7 +460,7 @@ class EPub
     /**
      * EPUB 2 navigation control file (NCX format)
      * See https://idpf.org/epub/20/spec/OPF_2.0_latest.htm#Section2.4.1
-     * @param mixed $node
+     * @param DOMNode $node
      * @return array<string, string>
      */
     protected function getNavPointDetail($node)
@@ -469,7 +468,7 @@ class EPub
         $title = $this->toc_xpath->query('x:navLabel/x:text', $node)->item(0)->nodeValue;
         $nodes = $this->toc_xpath->query('x:content', $node);
         $src = static::getAttr($nodes, 'src');
-        $src = $this->encodeComponentName($src);
+        $src = static::encodeComponentName($src);
         $item = ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
         $insidenodes = $this->toc_xpath->query('x:navPoint', $node);
         if (count($insidenodes) < 1) {
@@ -485,7 +484,7 @@ class EPub
     /**
      * EPUB 3 navigation document (toc nav element)
      * See https://www.w3.org/TR/epub-33/#sec-nav-toc
-     * @param mixed $node
+     * @param DOMNode $node
      * @return array<string, string>
      */
     protected function getNavTocListItem($node)
@@ -493,7 +492,7 @@ class EPub
         $nodes = $this->nav_xpath->query('x:a', $node);
         $title = $nodes->item(0)->nodeValue;
         $src = static::getAttr($nodes, 'href');
-        $src = $this->encodeComponentName($src);
+        $src = static::encodeComponentName($src);
         $item = ['title' => preg_replace('~[\r\n]+~', '', $title), 'src' => $src];
         $insidenodes = $this->nav_xpath->query('x:ol/x:li', $node);
         if (count($insidenodes) < 1) {
@@ -511,7 +510,7 @@ class EPub
      *
      * For each chapter there is a "title" and a "src", and optional "children"
      * See https://github.com/joseph/Monocle/wiki/Book-data-object for details
-     * @return mixed
+     * @return array<mixed>
      */
     public function contents()
     {
@@ -544,7 +543,7 @@ class EPub
      *      'Simpson, Jacqueline' => 'Jacqueline Simpson',
      * )
      *
-     * @param mixed $authors
+     * @param string|array<mixed> $authors
      * @return void
      */
     public function setAuthors($authors)
@@ -612,7 +611,7 @@ class EPub
      * Set or get the Google Books ID
      *
      * @param string|bool $google
-     * @return mixed
+     * @return string
      */
     public function Google($google = false)
     {
@@ -623,7 +622,7 @@ class EPub
      * Set or get the Amazon ID of the book
      *
      * @param string|bool $amazon
-     * @return mixed
+     * @return string
      */
     public function Amazon($amazon = false)
     {
@@ -644,7 +643,7 @@ class EPub
     /**
      * Get the Series of the book
      *
-     * @return mixed
+     * @return string
      */
     public function getSeries()
     {
@@ -665,7 +664,7 @@ class EPub
     /**
      * Get the Series Index of the book
      *
-     * @return mixed
+     * @return string
      */
     public function getSeriesIndex()
     {
@@ -811,7 +810,7 @@ class EPub
             return null;
         }
 
-        $coverid = (string) static::getAttr($nodes, 'opf:content');
+        $coverid = static::getAttr($nodes, 'opf:content');
         if (!$coverid) {
             return null;
         }
@@ -857,8 +856,8 @@ class EPub
 
     /**
      * Summary of Combine
-     * @param mixed $a
-     * @param mixed $b
+     * @param string $a
+     * @param string $b
      * @throws \InvalidArgumentException
      * @return string
      */
@@ -902,8 +901,8 @@ class EPub
 
     /**
      * Summary of getFullPath
-     * @param mixed $file
-     * @param mixed $context
+     * @param string $file
+     * @param string|null $context
      * @return string
      */
     protected function getFullPath($file, $context = null)
@@ -912,7 +911,7 @@ class EPub
         $path = ltrim($path, '\\');
         $path = ltrim($path, '/');
         if (!empty($context)) {
-            $path = $this->combine(dirname($path), $context);
+            $path = static::combine(dirname($path), $context);
         }
         //error_log ("FullPath : $path ($file / $context)");
         return $path;
@@ -1117,7 +1116,7 @@ class EPub
      * @param bool|string $attribute Attribute name
      * @param bool|string $attributeValue Attribute value
      * @param bool $caseSensitive
-     * @return mixed
+     * @return void
      */
     protected function setMeta($item, $value, $attribute = false, $attributeValue = false, $caseSensitive = true)
     {
@@ -1132,7 +1131,7 @@ class EPub
             $attributeValue = $vallist;
         }
          */
-        return $this->getset($item, $value, $attribute, $attributeValue);
+        $this->getset($item, $value, $attribute, $attributeValue);
     }
 
     /**
@@ -1172,11 +1171,11 @@ class EPub
      * @param string $attributeValue Attribute value
      * @param string $datt   Destination attribute
      * @param string $value New node value
-     * @return mixed
+     * @return void
      */
     protected function setMetaDestination($item, $attribute, $attributeValue, $datt, $value)
     {
-        return $this->getset($item, $value, $attribute, $attributeValue, $datt);
+        $this->getset($item, $value, $attribute, $attributeValue, $datt);
     }
 
     /**
@@ -1199,17 +1198,17 @@ class EPub
      * Set the book title
      *
      * @param string $title
-     * @return mixed
+     * @return void
      */
     public function setTitle($title)
     {
-        return $this->getset('dc:title', $title);
+        $this->getset('dc:title', $title);
     }
 
     /**
      * Get the book title
      *
-     * @return mixed
+     * @return string
      */
     public function getTitle()
     {
@@ -1220,17 +1219,17 @@ class EPub
      * Set the book's language
      *
      * @param string $lang
-     * @return mixed
+     * @return void
      */
     public function setLanguage($lang)
     {
-        return $this->getset('dc:language', $lang);
+        $this->getset('dc:language', $lang);
     }
 
     /**
      * Get the book's language
      *
-     * @return mixed
+     * @return string
      */
     public function getLanguage()
     {
@@ -1316,7 +1315,7 @@ class EPub
      * Get a date for an event in the package file’s meta section.
      *
      * @param string $event
-     * @return mixed
+     * @return string
      */
     public function getEventDate($event)
     {
@@ -1339,7 +1338,7 @@ class EPub
     /**
      * Get the book's creation date
      *
-     * @return mixed
+     * @return string
      */
     public function getCreationDate()
     {
@@ -1362,7 +1361,7 @@ class EPub
     /**
      * Get the book's modification date
      *
-     * @return mixed
+     * @return string
      */
     public function getModificationDate()
     {
@@ -1704,7 +1703,7 @@ class EPub
             $content = $node->getAttribute('content');
             try {
                 $annotations[] = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-            } catch (JsonException $e) {
+            } catch (JsonException) {
                 $annotations[] = $content;
             }
         }
@@ -1727,14 +1726,14 @@ class EPub
                 throw new Exception('Failed to access epub bookmark file');
             }
         }
-        if (!str_starts_with($data, static::EPUB_FILE_TYPE_MAGIC)) {
+        if (!str_starts_with($data, (string) static::EPUB_FILE_TYPE_MAGIC)) {
             throw new Exception('Invalid format for epub bookmark file');
         }
-        $content = substr($data, strlen(static::EPUB_FILE_TYPE_MAGIC));
+        $content = substr($data, strlen((string) static::EPUB_FILE_TYPE_MAGIC));
         $content = base64_decode($content);
         try {
             $bookmarks = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
+        } catch (JsonException) {
             $bookmarks = $content;
         }
         return $bookmarks;
@@ -1861,7 +1860,7 @@ class EPub
 
         $navPointNodes = $xpath->query('//ncx:navMap/ncx:navPoint');
 
-        $this->loadNavPoints($navPointNodes, $this->tocnav->getNavMap(), $xpath);
+        static::loadNavPoints($navPointNodes, $this->tocnav->getNavMap(), $xpath);
 
         return $this->tocnav;
     }
@@ -1922,7 +1921,7 @@ class EPub
         $toc = $xpath->query('//x:nav[@epub:type="toc"]')->item(0);
         $navListNodes = $xpath->query('x:ol/x:li', $toc);
         if ($navListNodes->length > 0) {
-            $this->loadNavList($navListNodes, $this->tocnav->getNavMap(), $xpath);
+            static::loadNavList($navListNodes, $this->tocnav->getNavMap(), $xpath);
         }
 
         return $this->tocnav;
