@@ -5,6 +5,10 @@
  * @author mikespub
  */
 
+if (!empty($_SERVER['SCRIPT_NAME']) && str_contains($_SERVER['SCRIPT_NAME'], '/vendor/')) {
+    echo "Unable to run in /vendor/ directory";
+    return;
+}
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
 use SebLucas\EPubMeta\App\Handler;
