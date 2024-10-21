@@ -605,7 +605,7 @@ class EPubTest extends TestCase
         $test_epub3_copy = __DIR__ . '/data/eng3.copy.epub';
 
         // sometime I might have accidentally broken the test file
-        $this->assertEquals(53216, filesize($test_epub3));
+        $this->assertEquals(54871, filesize($test_epub3));
 
         // we work on a copy to test saving
         $this->assertTrue(copy($test_epub3, $test_epub3_copy));
@@ -644,6 +644,45 @@ class EPubTest extends TestCase
         $this->assertEquals('Task 2: Conversion', $childPoint->getNavLabel());
         $this->assertCount(7, $childPoint->getChildren());
         $this->assertEquals('Task 6: The e-book viewer', $navPoint->getChildren()->last()->getNavLabel());
+
+        unlink($test_epub3_copy);
+    }
+
+    /**
+     * @throws Exception
+     * @return void
+     */
+    public function testSeriesOrCollection()
+    {
+        $test_epub3 = __DIR__ . '/data/eng3.epub';
+        $test_epub3_copy = __DIR__ . '/data/eng3.copy.epub';
+
+        // sometime I might have accidentally broken the test file
+        $this->assertEquals(54871, filesize($test_epub3));
+
+        // we work on a copy to test saving
+        $this->assertTrue(copy($test_epub3, $test_epub3_copy));
+
+        $epub = new EPub($test_epub3_copy);
+
+        // get Calibre series + index
+        $series = $epub->getSeries();
+        $index = $epub->getSeriesIndex();
+        $this->assertEquals('', $series);
+        $this->assertEquals('', $index);
+
+        // get (first) EPub 3.x collection + position
+        $collectionId = $epub->getCollectionId();
+        $this->assertEquals('c01', $collectionId);
+        $collection = $epub->getCollectionName($collectionId);
+        $position = $epub->getGroupPosition($collectionId);
+        $this->assertEquals('collection', $collection);
+        $this->assertEquals('1', $position);
+
+        // utility method
+        [$series, $index] = $epub->getSeriesOrCollection();
+        $this->assertEquals('collection', $series);
+        $this->assertEquals('1', $index);
 
         unlink($test_epub3_copy);
     }

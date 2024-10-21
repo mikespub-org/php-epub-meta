@@ -643,6 +643,10 @@ class EPub
     /**
      * Get the Series of the book
      *
+     * Calibre series:
+     *   <meta name="calibre:series" content="Harry Potter"/>
+     *   <meta name="calibre:series_index" content="1"/>
+     *
      * @return string
      */
     public function getSeries()
@@ -669,6 +673,71 @@ class EPub
     public function getSeriesIndex()
     {
         return $this->getMetaDestination('opf:meta', 'name', 'calibre:series_index', 'content');
+    }
+
+    /**
+     * Get (first) collection identifier - there can be several + they can be nested
+     *
+     * EPub 3.x collections:
+     *   <meta property="belongs-to-collection" id="c01">collection</meta>
+     *   <meta refines="#c01" property="group-position">1</meta>
+     *   <meta refines="#c01" property="collection-type">series</meta> (or set - optional)
+     *
+     * @return string
+     */
+    public function getCollectionId()
+    {
+        return $this->getMetaDestination('opf:meta', 'property', 'belongs-to-collection', 'id');
+    }
+
+    /**
+     * Get name for collection identifier
+     *
+     * @param string $identifier
+     * @return string
+     */
+    public function getCollectionName($identifier)
+    {
+        return $this->getMeta('opf:meta', 'id', $identifier);
+    }
+
+    /**
+     * Get group position for collection identifier
+     *
+     * @param string $identifier
+     * @return string
+     */
+    public function getGroupPosition($identifier)
+    {
+        $xpath = '//opf:metadata/opf:meta[@property="group-position" and @refines="#' . $identifier . '"]';
+        $nodes = $this->xpath->query($xpath);
+        if ($nodes->length == 0) {
+            return '';
+        }
+        return $nodes->item(0)->nodeValue;
+    }
+
+    /**
+     * Get Calibre series + index or EPub 3.x collection + position
+     *
+     * @return array{0: string, 1: string}
+     */
+    public function getSeriesOrCollection()
+    {
+        // get Calibre series + index
+        $series = $this->getSeries();
+        if (!empty($series)) {
+            $index = $this->getSeriesIndex();
+            return [$series, $index];
+        }
+        // get (first) EPub 3.x collection + position
+        $id = $this->getCollectionId();
+        if (!empty($id)) {
+            $collection = $this->getCollectionName($id);
+            $position = $this->getGroupPosition($id);
+            return [$collection, $position];
+        }
+        return ['', ''];
     }
 
     /**
