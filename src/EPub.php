@@ -562,6 +562,9 @@ class EPub
         $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
         static::deleteNodes($nodes);
 
+        // @todo support EPub 3.x format: use meta refines nodes with property="file-as" and property="role"
+        //$version = $this->getEpubVersion();
+
         // add new nodes
         /** @var EpubDomElement $parent */
         $parent = $this->xpath->query('//opf:metadata')->item(0);
@@ -579,31 +582,80 @@ class EPub
 
     /**
      * Get the book author(s)
+     *
+     * Authors will be given with a "file-as" and a real name. The file as
+     * is used for sorting in e-readers.
+     *
+     * Example:
+     *
+     * array(
+     * 'Pratchett, Terry' => 'Terry Pratchett',
+     * 'Simpson, Jacqueline' => 'Jacqueline Simpson',
+     * )
+     *
      * @return array<string>
      */
     public function getAuthors()
     {
-        $rolefix = false;
         $authors = [];
-        $nodes = $this->xpath->query('//opf:metadata/dc:creator[@opf:role="aut"]');
-        if ($nodes->length == 0) {
-            // no nodes where found, let's try again without role
-            $nodes = $this->xpath->query('//opf:metadata/dc:creator');
-            $rolefix = true;
-        }
+        $version = $this->getEpubVersion();
+        // <dc:creator id="create1">Marie d'Agoult</dc:creator>
+        $nodes = $this->xpath->query('//opf:metadata/dc:creator');
         foreach ($nodes as $node) {
             /** @var EpubDomElement $node */
             $name = $node->nodeValue;
-            $as   = $node->getAttrib('opf:file-as');
+            $id = $node->getAttrib('id');
+            $as = '';
+            // Missing id for property refines - use old-style opf:file-as and opf:role here
+            if ($version == 2 || empty($id)) {
+                // Check if role is aut (if any)
+                $role = $node->getAttrib('opf:role');
+                if (!empty($role) && $role != 'aut') {
+                    continue;
+                }
+                $as = $node->getAttrib('opf:file-as');
+                if (!$as) {
+                    $as = $name;
+                    $node->setAttrib('opf:file-as', $as);
+                }
+                if (empty($role)) {
+                    $node->setAttrib('opf:role', 'aut');
+                }
+                $authors[$as] = $name;
+                continue;
+            }
+            $role = '';
+            // Check if role is aut
+            // <meta refines="#create1" scheme="marc:relators" property="role">aut</meta>
+            $metaNodes = $this->xpath->query('//opf:metadata/opf:meta[@refines="#' . $id . '"]');
+            foreach ($metaNodes as $metaNode) {
+                /** @var EpubDomElement $metaNode */
+                $metaProperty = $metaNode->getAttrib('property');
+                switch ($metaProperty) {
+                    case 'role':
+                        $role = $metaNode->nodeValue;
+                        break;
+                    case 'file-as':
+                        $as = $metaNode->nodeValue;
+                        break;
+                }
+            }
+            // Still missing an author here
+            if (count($metaNodes) > 0 && $role != 'aut') {
+                continue;
+            }
             if (!$as) {
                 $as = $name;
+                // @todo add meta refines node with property="file-as"
                 $node->setAttrib('opf:file-as', $as);
-            }
-            if ($rolefix) {
-                $node->setAttrib('opf:role', 'aut');
             }
             $authors[$as] = $name;
         }
+
+        if (count($authors) > 1) {
+            ksort($authors);
+        }
+
         return $authors;
     }
 
@@ -1405,13 +1457,33 @@ class EPub
     }
 
     /**
-     * Get the book's creation date
+     * Get the book's creation date - with fallback to dcterms:created or dc:date
      *
      * @return string
      */
     public function getCreationDate()
     {
+        // <dc:date opf:event="creation">2014-08-03T16:01:40Z</dc:date>
         $res = $this->getEventDate('creation');
+
+        // <meta property="dcterms:created">2014-06-08T14:22:53Z</meta>
+        if (empty($res)) {
+            $version = $this->getEpubVersion();
+            if ($version == 3) {
+                $res = $this->getMeta('opf:meta', 'property', 'dcterms:created');
+            }
+        }
+
+        // @see https://web.archive.org/web/https://amanuensis.pagesperso-orange.fr/release_note.html
+        // <meta content="2014-08-03T18:01:35" name="amanuensis:xhtml-creation-date" />
+        //if (empty($res)) {
+        //    $res = $this->getMeta('opf:meta', 'name', 'amanuensis:xhtml-creation-date', 'content');
+        //}
+
+        // <dc:date>2014-08-03T16:01:40Z</dc:date>
+        if (empty($res)) {
+            $res = $this->getMeta('dc:date');
+        }
 
         return $res;
     }
@@ -1428,13 +1500,22 @@ class EPub
     }
 
     /**
-     * Get the book's modification date
+     * Get the book's modification date - with fallback to dcterms:modified
      *
      * @return string
      */
     public function getModificationDate()
     {
+        // <dc:date opf:event="modification">2014-08-03T16:01:40Z</dc:date>
         $res = $this->getEventDate('modification');
+
+        // <meta property="dcterms:modified">2018-12-20T13:59:10Z</meta>
+        if (empty($res)) {
+            $version = $this->getEpubVersion();
+            if ($version == 3) {
+                $res = $this->getMeta('opf:meta', 'property', 'dcterms:modified');
+            }
+        }
 
         return $res;
     }

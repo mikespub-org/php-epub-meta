@@ -648,6 +648,51 @@ class EPubTest extends TestCase
         unlink($test_epub3_copy);
     }
 
+    public function testEPub2Authors()
+    {
+        $authors = $this->epub->getAuthors();
+        $this->assertEquals(['Shakespeare, William' => 'William Shakespeare'], $authors);
+
+        $test_epub2 = __DIR__ . '/data/eng.epub';
+        $this->assertEquals(22664, filesize($test_epub2));
+
+        $epub = new EPub($test_epub2);
+        $authors = $epub->getAuthors();
+        $this->assertEquals(['Schember, John' => 'John Schember'], $authors);
+    }
+
+    public function testEPub3Authors()
+    {
+        $test_epub3 = __DIR__ . '/data/eng3.epub';
+        $this->assertEquals(54871, filesize($test_epub3));
+
+        $epub = new EPub($test_epub3);
+        $authors = $epub->getAuthors();
+        $this->assertEquals(['Schember, John' => 'John Schember'], $authors);
+    }
+
+    public function testEPub2Dates()
+    {
+        $created = $this->epub->getCreationDate();
+        $this->assertEquals('1597', $created);
+
+        $modified = $this->epub->getModificationDate();
+        $this->assertEquals('', $modified);
+    }
+
+    public function testEPub3Dates()
+    {
+        $test_epub3 = __DIR__ . '/data/eng3.epub';
+        $this->assertEquals(54871, filesize($test_epub3));
+
+        $epub = new EPub($test_epub3);
+        $created = $epub->getCreationDate();
+        $this->assertEquals('2014-09-14T22:00:00+00:00', $created);
+
+        $modified = $epub->getModificationDate();
+        $this->assertEquals('2023-09-16T18:31:25Z', $modified);
+    }
+
     /**
      * @throws Exception
      * @return void
