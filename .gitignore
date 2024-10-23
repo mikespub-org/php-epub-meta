@@ -6,3 +6,4 @@ clover.xml
 .yarn/
 yarn.lock
 .yarnrc.yml
+cache/

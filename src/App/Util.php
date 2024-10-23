@@ -36,11 +36,17 @@ class Util
      */
     public static function book_output($input)
     {
+        $input = basename($input);
         $input = str_replace('__', ',', $input);
         $input = str_replace('_', ' ', $input);
         $input = str_replace(',', ', ', $input);
         $input = str_replace('-', ' - ', $input);
-        [$author, $title] = explode('-', $input, 2);
+        if (str_contains($input, '-')) {
+            [$author, $title] = explode('-', $input, 2);
+        } else {
+            $title = $input;
+            $author = '';
+        }
         $author = trim($author);
         $title  = trim($title);
 

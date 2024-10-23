@@ -71,6 +71,14 @@ a:active {
     text-align: center;
 }
 
+.hidden {
+    display: none;
+}
+
+.shown {
+    display: table-cell;
+}
+
 table {
     margin-bottom: 20px;
 }
@@ -139,6 +147,10 @@ div.license {
 
 #bookapi-q {
     width: 600px;
+}
+
+#bookapi-l {
+    width: 20px;
 }
 
 #bookapi {

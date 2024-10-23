@@ -9,6 +9,7 @@ var bookapi = {
         '    <div class="buttons">' +
         '    <button class="btn-repl">replace</button><br />' +
         '    <button class="btn-fill">fill in</button>' +
+        '    <button class="btn-cmp">compare</button>' +
         '    </div>' +
         '    <h1 class="title"></h1>' +
         '    <p class="authors"></p>' +
@@ -32,22 +33,30 @@ var bookapi = {
                 height: 500
             }
         );
-        bookapi.$dialog.append('<div class="head">Lookup: <input type="text" id="bookapi-q" /></div>')
+        bookapi.$dialog.append('<div class="head">Lookup: <input type="text" id="bookapi-q" /><br />Language: <input type="text" id="bookapi-l" size="4" /> <button class="btn-search">search</button></div>')
                        .append('<div id="bookapi-out"></div>');
         bookapi.$out = $('#bookapi-out');
 
         $('#bookpanel').append('<a href="#" id="bookapi-s">Lookup Book Data</a>');
         $('#bookapi-s').attr('title','Search this book at Google Books');
-        $('#bookapi-s').click(bookapi.open);
+        $('#bookapi-s').on('click', bookapi.open);
 
-        $('#bookapi-q').keypress(
+        $('#bookapi-q').on('keypress',
             function(event){
                 if(event.which == 13){
                     event.preventDefault();
                     bookapi.search();
                 }
             });
-
+        $('#bookapi-l').on('keypress',
+            function(event){
+                if(event.which == 13){
+                    event.preventDefault();
+                    bookapi.search();
+                }
+            });
+        $('.btn-search').on('click', bookapi.search);
+    
     },
 
     open: function(){
@@ -55,6 +64,8 @@ var bookapi = {
 
         var query = $('#bookpanel input[name=title]').val();
         $('#bookapi-q').val(query);
+        var language = $('#bookpanel input[name=language]').val();
+        $('#bookapi-l').val(language);
 
         bookapi.search();
     },
@@ -63,7 +74,7 @@ var bookapi = {
         bookapi.$out.html('please wait...');
         $.ajax({
             type: 'GET',
-            data: {'api':$('#bookapi-q').val()},
+            data: {'api':$('#bookapi-q').val(), 'lang':$('#bookapi-l').val()},
             success: bookapi.searchdone,
             dataType: 'json'
         });
@@ -100,6 +111,7 @@ var bookapi = {
 
             $res.find('.btn-repl').click(data.items[i].volumeInfo,bookapi.replace);
             $res.find('.btn-fill').click(data.items[i].volumeInfo,bookapi.fillin);
+            $res.find('.btn-cmp').click(data.items[i].volumeInfo,bookapi.compare);
 
             bookapi.$out.append($res);
         }
@@ -144,7 +156,37 @@ var bookapi = {
             $('#cover').attr('src',item.imageLinks.thumbnail);
         }
         bookapi.$dialog.dialog('close');
-    }
+    },
+
+    compare: function(event){
+        item = event.data;
+        if(item.title)
+            $('#bookpanel input[name=title2]').val(item.title);
+        if(item.description)
+            $('#bookpanel textarea[name=description2]').val(item.description);
+        if(item.language)
+            $('#bookpanel input[name=language2]').val(item.language);
+        if(item.publisher)
+            $('#bookpanel input[name=publisher2]').val(item.publisher);
+        if(item.categories)
+            $('#bookpanel input[name=subjects2]').val(item.categories.join(', '));
+        if(item.imageLinks){
+            $('#bookpanel input[name=coverurl2]').val(item.imageLinks.thumbnail);
+            $('#cover').attr('src',item.imageLinks.thumbnail);
+        }
+        // @todo handle style changes better :-)
+        $('.hidden').addClass('shown');
+        $('.hidden').removeClass('hidden');
+        width = $('#wrapper').width();
+        if (width < 1000) {
+            $('#wrapper').width(width + 450);
+        }
+        width = $('#bookpanel').width();
+        if (width < 1000) {
+            $('#bookpanel').width(width + 450);
+        }
+        bookapi.$dialog.dialog('close');
+    },
 
 };
 
@@ -184,7 +226,7 @@ $(function(){
     }
 
     // initialize the WYSIWYG editor
-    $wysiwyg = $('textarea').cleditor({
+    $wysiwyg = $('#bookpanel textarea[name=description]').cleditor({
         width: 450,
         controls:     // controls to add to the toolbar
                 "bold italic underline strikethrough | " +

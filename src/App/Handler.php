@@ -16,68 +16,125 @@ use Exception;
 
 class Handler
 {
+    protected string $rootdir;
+    protected string $templatedir;
+    protected ?string $cachedir;
     protected string $bookdir;
+    protected bool $recursive;
     protected string $baseurl;
     protected bool $rename;
-    protected string $rootdir;
     protected ?EPub $epub = null;
     protected ?string $error = null;
+    /** @var array<string, mixed> */
+    protected array $params;
 
-    public function __construct(string $bookdir, string $baseurl = '.', bool $rename = true)
+    /**
+     * @param array<string, string|bool> $config
+     */
+    public function __construct(array $config = [])
     {
-        $this->bookdir = $bookdir;
-        $this->baseurl = $baseurl;
-        $this->rename = $rename;
         $this->rootdir = dirname(__DIR__, 2);
+        $this->templatedir = $config['templatedir'] ?? ($this->rootdir . '/templates/');
+        $this->cachedir = $config['cachedir'] ?? null;
+        $this->bookdir = $config['bookdir'] ?? ($this->rootdir . '/test/data/');
+        $this->recursive = $config['recursive'] ?? false;
+        $this->baseurl = $config['baseurl'] ?? '..';
+        $this->rename = $config['rename'] ?? true;
     }
 
     /**
-     * Handle request
-     * @param mixed $request @todo
+     * Get request params from PHP globals
+     * @return array<string, mixed>
+     */
+    public function getRequestFromGlobals()
+    {
+        $params = [];
+        $params['api'] = $_GET['api'] ?? null;
+        $params['lang'] = $_GET['lang'] ?? null;
+        $params['book'] = $_REQUEST['book'] ?? null;
+        $params['img'] = $_REQUEST['img'] ?? null;
+        $params['save'] = $_REQUEST['save'] ?? null;
+        if (empty($params['save'])) {
+            return $params;
+        }
+        // posted values - see getEpubData()
+        $fields = [
+            'title',
+            'description',
+            'language',
+            'publisher',
+            'copyright',
+            'isbn',
+            'subjects',
+            // arrays
+            'authorname',
+            'authoras',
+            'coverurl',
+        ];
+        foreach ($fields as $field) {
+            $params[$field] = $_POST[$field] ?? null;
+        }
+        // uploaded file
+        $params['coverfile'] = $_FILES['coverfile'] ?? null;
+        return $params;
+    }
+
+    /**
+     * Handle request with params
+     * @param ?array<string, mixed> $params
      * @return string|null
      */
-    public function handle($request = null)
+    public function handle($params = null)
     {
-        // proxy google requests
-        if (isset($_GET['api'])) {
-            header('application/json; charset=UTF-8');
-            return $this->searchBookApi($_GET['api']);
+        if (!isset($params)) {
+            $params = $this->getRequestFromGlobals();
         }
-        if (!empty($_REQUEST['book'])) {
+        $this->params = $params;
+        // proxy google requests
+        if (isset($params['api'])) {
+            header('application/json; charset=UTF-8');
+            return $this->searchBookApi($params['api'], $params['lang'] ?? '');
+        }
+        if (!empty($params['book'])) {
             try {
-                $book = preg_replace('/[^\w ._-]+/', '', $_REQUEST['book']);
-                $book = basename($book . '.epub'); // no upper dirs, lowers might be supported later
-                $this->epub = new EPub($this->bookdir . $book, ZipEdit::class);
+                $this->epub = $this->getEpubFile($params['book']);
             } catch (Exception $e) {
                 $this->error = $e->getMessage();
             }
         }
         // return image data
-        if (!empty($_REQUEST['img']) && isset($this->epub)) {
+        if (!empty($params['img']) && isset($this->epub)) {
             $img = $this->epub->getCoverInfo();
             header('Content-Type: ' . $img['mime']);
             return $img['data'];
         }
         // save epub data
-        if (isset($_REQUEST['save']) && isset($this->epub)) {
-            $this->epub = $this->saveEpubData($this->epub);
+        if (isset($params['save']) && isset($this->epub)) {
+            $this->epub = $this->saveEpubData($this->epub, $params);
             if (!$this->error) {
                 // rename
                 $new = $this->renameEpubFile($this->epub);
-                $go = basename($new, '.epub');
-                header('Location: ?book=' . rawurlencode($go));
+                $go = $this->getBookName($new);
+                header('Location: ?book=' . rawurlencode($go) . '&refresh=' . (string) time());
                 return null;
             }
         }
         $data = [];
-        $data['bookdir'] = htmlspecialchars($this->bookdir);
+        if (str_starts_with($this->bookdir, $this->rootdir . DIRECTORY_SEPARATOR)) {
+            $data['bookdir'] = htmlspecialchars(str_replace($this->rootdir . DIRECTORY_SEPARATOR, '', $this->bookdir));
+        } else {
+            $data['bookdir'] = htmlspecialchars(string: $this->bookdir);
+        }
         $data['baseurl'] = $this->baseurl;
         $data['booklist'] = '';
-        $list = glob($this->bookdir . '/*.epub');
+        $data['booklist'] .= '<li ' . (empty($params['book']) ? 'class="active"' : '') . '>';
+        $data['booklist'] .= '<a href="?book=">Home</a>';
+        $data['booklist'] .= '</li>';
+        $list = $this->getFileList($this->bookdir, '*.epub', $this->recursive);
         foreach ($list as $book) {
-            $base = basename($book, '.epub');
+            $base = $this->getBookName($book);
             $name = Util::book_output($base);
-            $data['booklist'] .= '<li ' . ($base == $_REQUEST['book'] ? 'class="active"' : '') . '>';
+            $data['booklist'] .= '<li ' . ($base == $params['book'] ? 'class="active"' : '') . '>';
             $data['booklist'] .= '<a href="?book=' . htmlspecialchars($base) . '">' . $name . '</a>';
             $data['booklist'] .= '</li>';
         }
@@ -86,10 +143,10 @@ class Handler
         }
         if (empty($this->epub)) {
             $data['license'] = str_replace("\n\n", '</p><p>', htmlspecialchars(file_get_contents($this->rootdir . '/LICENSE')));
-            $template = $this->rootdir . '/templates/index.html';
+            $template = $this->templatedir . 'meta.html';
         } else {
             $data = $this->getEpubData($this->epub, $data);
-            $template = $this->rootdir . '/templates/epub.html';
+            $template = $this->templatedir . 'epub.html';
         }
         header('Content-Type: text/html; charset=utf-8');
         return $this->renderTemplate($template, $data);
@@ -98,15 +155,98 @@ class Handler
     /**
      * Proxy google requests
      * @param string $query
+     * @param ?string $lang
      * @return string|false
      */
-    protected function searchBookApi($query)
+    protected function searchBookApi($query, $lang = null)
     {
-        $result = file_get_contents('https://www.googleapis.com/books/v1/volumes?q=' . rawurlencode($query) . '&maxResults=25&printType=books&projection=full');
+        $query = trim($query);
+        $cachefile = null;
+        if (!empty($this->cachedir)) {
+            if (!empty($lang) && preg_match('/^\w\w$/', $lang)) {
+                $cachefile = $this->cachedir . rawurlencode($query) . '.' . $lang . '.json';
+            } else {
+                $cachefile = $this->cachedir . rawurlencode($query) . '.json';
+            }
+            if (file_exists($cachefile)) {
+                $result = file_get_contents($cachefile);
+                return $result;
+            }
+        }
+        $url = 'https://www.googleapis.com/books/v1/volumes?q=' . rawurlencode($query) . '&maxResults=25&printType=books&projection=full';
+        if (!empty($lang) && preg_match('/^\w\w$/', $lang)) {
+            $url .= '&langRestrict=' . $lang;
+        }
+        $result = file_get_contents($url);
         if ($result === false) {
             return json_encode(['error' => $http_response_header[0], 'totalItems' => 0]);
         }
+        if (!empty($cachefile) && !empty($result)) {
+            file_put_contents($cachefile, $result);
+        }
         return $result;
+    }
+
+    /**
+     * Summary of getFileList
+     * @param string $path
+     * @param string $pattern
+     * @param bool $recursive
+     * @return array<string>
+     */
+    protected function getFileList($path, $pattern = '*.epub', $recursive = false)
+    {
+        $fileList = [];
+        // Check path
+        if (!is_dir($path)) {
+            return $fileList;
+        }
+        if (!str_ends_with($path, DIRECTORY_SEPARATOR)) {
+            $path .= DIRECTORY_SEPARATOR;
+        }
+        // Add files from the current directory
+        $files = glob($path . $pattern, GLOB_MARK);
+        foreach ($files as $item) {
+            if (str_ends_with($item, DIRECTORY_SEPARATOR)) {
+                continue;
+            }
+            $fileList[] = $item;
+        }
+        if (!$recursive) {
+            return $fileList;
+        }
+        // Scan sub directories
+        $paths = glob($path . '*', GLOB_MARK | GLOB_ONLYDIR);
+        foreach ($paths as $path) {
+            $fileList = array_merge($fileList, $this->getFileList($path, $pattern, $recursive));
+        }
+        return $fileList;
+    }
+
+    /**
+     * Get Epub file
+     * @throws Exception
+     * @param string $book
+     * @return EPub
+     */
+    protected function getEpubFile($book)
+    {
+        // Alice's Adventures in Wonderland - Lewis Carroll.epub
+        if (!$this->recursive) {
+            $book = preg_replace('/[^\w ._\'-]+/', '', $book);
+            $book = $this->bookdir . basename($book . '.epub'); // no upper dirs, lowers might be supported later
+            return new EPub($book, ZipEdit::class);
+        }
+        // Lewis Carroll/Alice's Adventures in Wonderland (17)/Alice's Adventures in Wonderland - Lewis Carroll.epub
+        $book = preg_replace('/[^\w ._\'()\/-]+/', '', $book);
+        $book = $this->bookdir . $book . '.epub'; // no upper dirs
+        if (!file_exists($book)) {
+            throw new Exception('Invalid ebook file ' . htmlspecialchars(basename($book)));
+        }
+        if (!str_starts_with(realpath($book), realpath($this->bookdir) . DIRECTORY_SEPARATOR)) {
+            throw new Exception('No ebooks allowed outside bookdir. Are you using symlinks inside bookdir?');
+        }
+        return new EPub($book, ZipEdit::class);
     }
 
     /**
@@ -117,7 +257,7 @@ class Handler
      */
     protected function getEpubData($epub, $data = [])
     {
-        $data['book'] = htmlspecialchars((string) $_REQUEST['book']);
+        $data['book'] = htmlspecialchars((string) $this->params['book']);
         $data['title'] = htmlspecialchars($epub->getTitle());
         $data['authors'] = '';
         $count = 0;
@@ -128,7 +268,7 @@ class Handler
             $data['authors'] .= '</p>';
             $count++;
         }
-        $data['cover'] = '?book=' . htmlspecialchars((string) $_REQUEST['book']) . '&amp;img=1';
+        $data['cover'] = '?book=' . htmlspecialchars((string) $this->params['book']) . '&amp;img=1';
         $c = $epub->getCoverInfo();
         $data['imgclass'] = $c['found'] ? 'hasimg' : 'noimg';
         $data['description'] = htmlspecialchars($epub->getDescription());
@@ -143,22 +283,29 @@ class Handler
     /**
      * Save Epub data
      * @param EPub $epub
+     * @param array<string, mixed> $params
      * @return EPub
      */
-    protected function saveEpubData($epub)
+    protected function saveEpubData($epub, $params)
     {
-        $epub->setTitle($_POST['title']);
-        $epub->setDescription($_POST['description']);
-        $epub->setLanguage($_POST['language']);
-        $epub->setPublisher($_POST['publisher']);
-        $epub->setCopyright($_POST['copyright']);
-        $epub->setIsbn($_POST['isbn']);
-        $epub->setSubjects($_POST['subjects']);
+        $epub->setTitle((string) $params['title']);
+        $epub->setDescription((string) $params['description']);
+        $epub->setLanguage((string) $params['language']);
+        $epub->setPublisher((string) $params['publisher']);
+        $epub->setCopyright((string) $params['copyright']);
+        $epub->setIsbn((string) $params['isbn']);
+        $epub->setSubjects((string) $params['subjects']);
 
+        if (empty($params['authorname'])) {
+            $params['authorname'] = [];
+        }
+        if (empty($params['authoras'])) {
+            $params['authoras'] = [];
+        }
         $authors = [];
-        foreach ((array) $_POST['authorname'] as $num => $name) {
+        foreach ((array) $params['authorname'] as $num => $name) {
             if ($name) {
-                $as = $_POST['authoras'][$num];
+                $as = $params['authoras'][$num];
                 if (!$as) {
                     $as = $name;
                 }
@@ -169,15 +316,15 @@ class Handler
 
         // handle image
         $cover = '';
-        if (preg_match('/^https?:\/\//i', (string) $_POST['coverurl'])) {
-            $data = @file_get_contents($_POST['coverurl']);
+        if (preg_match('/^https?:\/\//i', (string) $params['coverurl'])) {
+            $data = @file_get_contents($params['coverurl']);
             if ($data) {
                 $cover = tempnam(sys_get_temp_dir(), 'epubcover');
                 file_put_contents($cover, $data);
                 unset($data);
             }
-        } elseif (is_uploaded_file($_FILES['coverfile']['tmp_name'])) {
-            $cover = $_FILES['coverfile']['tmp_name'];
+        } elseif (!empty($params['coverfile']) && is_uploaded_file($params['coverfile']['tmp_name'])) {
+            $cover = $params['coverfile']['tmp_name'];
         }
         if ($cover) {
             $info = @getimagesize($cover);
@@ -216,6 +363,7 @@ class Handler
         $author = array_keys($epub->getAuthors())[0];
         $title  = $epub->getTitle();
         $new    = Util::to_file($author . '-' . $title);
+        // @todo allow recursive too when renaming?
         $new    = $this->bookdir . $new . '.epub';
         $old    = $epub->file();
         if (realpath($new) != realpath($old)) {
@@ -224,6 +372,21 @@ class Handler
             }
         }
         return $new;
+    }
+
+    /**
+     * Summary of getBookName
+     * @param string $book
+     * @return string
+     */
+    protected function getBookName($book)
+    {
+        if (!$this->recursive) {
+            return basename($book, '.epub');
+        }
+        $book = str_replace(realpath($this->bookdir) . DIRECTORY_SEPARATOR, '', realpath($book));
+        $book = str_replace('.epub', '', $book);
+        return $book;
     }
 
     /**

@@ -1768,11 +1768,12 @@ class EPub
     /**
      * Add a title page with the cover image to the EPUB.
      *
-     * @param string $templatePath The path to the template file. Defaults to an XHTML file contained in this library.
+     * @param ?string $templatePath The path to the template file. Defaults to an XHTML file contained in this library.
      * @return void
      */
-    public function addCoverImageTitlePage($templatePath = __DIR__ . '/../templates/titlepage.xhtml')
+    public function addCoverImageTitlePage($templatePath = null)
     {
+        $templatePath ??= dirname(__DIR__) . '/templates/titlepage.xhtml';
         $xhtmlFilename = static::TITLE_PAGE_ID . '.xhtml';
 
         // add title page file to zip
