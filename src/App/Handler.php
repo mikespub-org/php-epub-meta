@@ -238,7 +238,7 @@ class Handler
             return new EPub($book, ZipEdit::class);
         }
         // Lewis Carroll/Alice's Adventures in Wonderland (17)/Alice's Adventures in Wonderland - Lewis Carroll.epub
-        $book = preg_replace('/[^\w ._\'()\/-]+/', '', $book);
+        $book = preg_replace('/[^\w ._\'(),\/-]+/', '', $book);
         $book = $this->bookdir . $book . '.epub'; // no upper dirs
         if (!file_exists($book)) {
             throw new Exception('Invalid ebook file ' . htmlspecialchars(basename($book)));
