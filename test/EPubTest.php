@@ -648,6 +648,10 @@ class EPubTest extends TestCase
         unlink($test_epub3_copy);
     }
 
+    /**
+     * @throws Exception
+     * @return void
+     */
     public function testEPub2Authors()
     {
         $authors = $this->epub->getAuthors();
@@ -661,6 +665,10 @@ class EPubTest extends TestCase
         $this->assertEquals(['Schember, John' => 'John Schember'], $authors);
     }
 
+    /**
+     * @throws Exception
+     * @return void
+     */
     public function testEPub3Authors()
     {
         $test_epub3 = __DIR__ . '/data/eng3.epub';
@@ -671,6 +679,10 @@ class EPubTest extends TestCase
         $this->assertEquals(['Schember, John' => 'John Schember'], $authors);
     }
 
+    /**
+     * @throws Exception
+     * @return void
+     */
     public function testEPub2Dates()
     {
         $created = $this->epub->getCreationDate();
@@ -680,6 +692,10 @@ class EPubTest extends TestCase
         $this->assertEquals('', $modified);
     }
 
+    /**
+     * @throws Exception
+     * @return void
+     */
     public function testEPub3Dates()
     {
         $test_epub3 = __DIR__ . '/data/eng3.epub';

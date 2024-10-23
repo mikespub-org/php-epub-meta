@@ -17,9 +17,17 @@ use SebLucas\EPubMeta\App\Handler;
 $bookdir = '/home/andi/Dropbox/ebooks/';
 $bookdir = dirname(__DIR__) . '/test/data/';
 
-$handler = new Handler($bookdir);
+// baseurl for assets etc. (relative to this entrypoint)
+$baseurl = '..';
+// rename file as new "$author-$title.epub" after update
+$rename = true;
+
+$handler = new Handler($bookdir, $baseurl, $rename);
 try {
-    $handler->handle();
+    $result = $handler->handle();
+    if (!is_null($result)) {
+        echo $result;
+    }
 } catch (Throwable $e) {
     error_log($e);
     echo $e->getMessage();

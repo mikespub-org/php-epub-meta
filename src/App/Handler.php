@@ -17,28 +17,31 @@ use Exception;
 class Handler
 {
     protected string $bookdir;
+    protected string $baseurl;
+    protected bool $rename;
     protected string $rootdir;
     protected ?EPub $epub = null;
     protected ?string $error = null;
 
-    public function __construct(string $bookdir)
+    public function __construct(string $bookdir, string $baseurl = '.', bool $rename = true)
     {
         $this->bookdir = $bookdir;
+        $this->baseurl = $baseurl;
+        $this->rename = $rename;
         $this->rootdir = dirname(__DIR__, 2);
     }
 
     /**
      * Handle request
      * @param mixed $request @todo
-     * @return void
+     * @return string|null
      */
     public function handle($request = null)
     {
         // proxy google requests
         if (isset($_GET['api'])) {
             header('application/json; charset=UTF-8');
-            echo $this->searchBookApi($_GET['api']);
-            return;
+            return $this->searchBookApi($_GET['api']);
         }
         if (!empty($_REQUEST['book'])) {
             try {
@@ -53,8 +56,7 @@ class Handler
         if (!empty($_REQUEST['img']) && isset($this->epub)) {
             $img = $this->epub->getCoverInfo();
             header('Content-Type: ' . $img['mime']);
-            echo $img['data'];
-            return;
+            return $img['data'];
         }
         // save epub data
         if (isset($_REQUEST['save']) && isset($this->epub)) {
@@ -64,11 +66,12 @@ class Handler
                 $new = $this->renameEpubFile($this->epub);
                 $go = basename($new, '.epub');
                 header('Location: ?book=' . rawurlencode($go));
-                return;
+                return null;
             }
         }
         $data = [];
         $data['bookdir'] = htmlspecialchars($this->bookdir);
+        $data['baseurl'] = $this->baseurl;
         $data['booklist'] = '';
         $list = glob($this->bookdir . '/*.epub');
         foreach ($list as $book) {
@@ -89,7 +92,7 @@ class Handler
             $template = $this->rootdir . '/templates/epub.html';
         }
         header('Content-Type: text/html; charset=utf-8');
-        echo $this->renderTemplate($template, $data);
+        return $this->renderTemplate($template, $data);
     }
 
     /**
@@ -99,7 +102,11 @@ class Handler
      */
     protected function searchBookApi($query)
     {
-        return file_get_contents('https://www.googleapis.com/books/v1/volumes?q=' . rawurlencode($query) . '&maxResults=25&printType=books&projection=full');
+        $result = file_get_contents('https://www.googleapis.com/books/v1/volumes?q=' . rawurlencode($query) . '&maxResults=25&printType=books&projection=full');
+        if ($result === false) {
+            return json_encode(['error' => $http_response_header[0], 'totalItems' => 0]);
+        }
+        return $result;
     }
 
     /**
@@ -203,6 +210,9 @@ class Handler
      */
     protected function renameEpubFile($epub)
     {
+        if (!$this->rename) {
+            return $epub->file();
+        }
         $author = array_keys($epub->getAuthors())[0];
         $title  = $epub->getTitle();
         $new    = Util::to_file($author . '-' . $title);

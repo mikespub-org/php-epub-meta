@@ -71,6 +71,10 @@ var bookapi = {
 
     searchdone: function(data){
         if(data.totalItems == 0){
+            if (data.error) {
+                bookapi.$out.html('Error: ' + data.error + '<br />Please try again later...');
+                return;
+            }
             bookapi.$out.html('Found no results.<br />Try adjusting the query and retry.');
             return;
         }
