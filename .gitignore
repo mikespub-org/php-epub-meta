@@ -7,3 +7,4 @@ clover.xml
 yarn.lock
 .yarnrc.yml
 cache/
+composer.lock
