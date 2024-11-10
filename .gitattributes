@@ -1,0 +1,7 @@
+.gitattributes export-ignore
+.gitignore     export-ignore
+phpstan*       export-ignore
+phpunit*       export-ignore
+app/           export-ignore
+assets/        export-ignore
+test/          export-ignore
