@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Representation of an EPUB document.
  *

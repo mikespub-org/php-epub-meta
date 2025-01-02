@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ZipFile class
  *
