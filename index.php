@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Redirect to app/ with HTTP response code 301 Moved Permanently
  */
