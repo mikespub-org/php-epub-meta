@@ -35,6 +35,7 @@ html, body {
 .author-row {
     position: relative;
     padding-right: 2rem;
+    margin-bottom: 1rem;
 }
 
 .remove-author {
@@ -76,11 +77,6 @@ html, body {
 }
 
 /** added after generating booklist and alert */
-
-.author-row2 {
-    position: relative;
-    margin-bottom: 1rem;
-}
 
 .noimg {
     opacity: 0.3;

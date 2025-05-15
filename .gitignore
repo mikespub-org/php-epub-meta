@@ -2,7 +2,7 @@ coverage/
 vendor/
 clover.xml
 *.cache
-.pnp.cjs
+.pnp.*
 .yarn/
 yarn.lock
 .yarnrc.yml

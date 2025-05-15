@@ -293,7 +293,7 @@ class Handler
         $data['imgclass'] = $c['found'] ? 'img-fluid' : 'img-fluid noimg';
 
         // Other fields
-        $data['description'] = htmlspecialchars($epub->getDescription());
+        $data['description'] = $epub->getDescription();  // don't use htmlspecialchars here anymore for div
         $data['subjects'] = htmlspecialchars(join(', ', $epub->getSubjects()));
         $data['publisher'] = htmlspecialchars($epub->getPublisher());
         $data['copyright'] = htmlspecialchars($epub->getCopyright());
