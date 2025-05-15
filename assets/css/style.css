@@ -86,3 +86,84 @@ html, body {
     display: block;
     margin-top: 0.25rem;
 }
+
+/* Update the comparison styles */
+.comparison-field {
+    margin-bottom: 1.5rem;
+}
+
+.comparison-field .field-header {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.comparison-field .field-values {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.comparison-field .value-container {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+}
+
+.comparison-field .value-container.changed {
+    border-color: #0d6efd;
+    background-color: #f8f9ff;
+}
+
+.comparison-field .value-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.comparison-field .value-content {
+    min-height: 1.5rem;
+}
+
+/* For the description field */
+.comparison-field.description .value-content {
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* For the authors table */
+.comparison-field.authors table {
+    width: 100%;
+    margin: 0;
+}
+
+.comparison-field.authors th {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.comparison-field.authors td {
+    padding: 0.5rem;
+}
+
+.comparison-field.authors td.changed {
+    background-color: #f8f9ff;
+}
+
+.comparison-field .btn-group {
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.comparison-field:hover .btn-group {
+    opacity: 1;
+}
+
+.comparison-field .value-container {
+    transition: background-color 0.3s;
+}
+
+.comparison-field .value-container.changed {
+    border-color: #0d6efd;
+    background-color: #f8f9ff;
+}

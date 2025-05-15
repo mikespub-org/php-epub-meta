@@ -51,6 +51,25 @@ const bookapi = {
                 this.search();
             }
         });
+        
+        document.getElementById('close-comparison').addEventListener('click', () => {
+            document.getElementById('comparison-container').classList.add('d-none');
+            document.getElementById('bookpanel').classList.remove('d-none');
+        });
+        
+        // Add Escape key handler
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const container = document.getElementById('comparison-container');
+                if (!container.classList.contains('d-none')) {
+                    container.classList.add('d-none');
+                    document.getElementById('bookpanel').classList.remove('d-none');
+                }
+            }
+        });
+
+        document.getElementById('accept-all').addEventListener('click', () => this.acceptAll());
+        document.getElementById('revert-all').addEventListener('click', () => this.revertAll());
     },
     
     open() {
@@ -139,18 +158,288 @@ const bookapi = {
         this.modal.hide();
     },
     
-    compare(item) {
-        document.querySelectorAll('.comparison').forEach(el => {
-            const originalId = el.id.replace('2', '');
-            const originalEl = document.getElementById(originalId);
-            if (originalEl) {
-                el.value = originalEl.value;
+    // Add these new methods:
+    acceptAll() {
+        // Show confirmation dialog
+        if (!confirm('Accept all changes? This will update all fields with the new values.')) {
+            return;
+        }
+        
+        // Process all fields with changes
+        const fields = document.querySelectorAll('.comparison-field');
+        fields.forEach(field => {
+            const acceptBtn = field.querySelector('.btn-accept');
+            if (acceptBtn) {
+                acceptBtn.click();
             }
         });
         
-        this.updateFields(item, false, '2');
-        document.getElementById('wrapper').classList.add('comparison-active');
+        // Close comparison view since all changes are processed
+        this.closeComparison();
+    },
+
+    revertAll() {
+        // Show confirmation dialog
+        if (!confirm('Revert all changes? This will keep all current values.')) {
+            return;
+        }
+        
+        // Process all fields with changes
+        const fields = document.querySelectorAll('.comparison-field');
+        fields.forEach(field => {
+            const revertBtn = field.querySelector('.btn-revert');
+            if (revertBtn) {
+                revertBtn.click();
+            }
+        });
+        
+        // Close comparison view since all changes are processed
+        this.closeComparison();
+    },
+
+    closeComparison() {
+        document.getElementById('comparison-container').classList.add('d-none');
+        document.getElementById('bookpanel').classList.remove('d-none');
+    },
+
+    compare(item) {
+        const fields = [
+            { id: 'title', label: 'Title' },
+            { id: 'publisher', label: 'Publisher' },
+            { id: 'subjects', label: 'Subjects', getValue: info => info.categories?.join(', ') || '' },
+            { id: 'language', label: 'Language' },
+            { id: 'description', label: 'Description', isHtml: true }
+        ];
+        
+        const container = document.querySelector('.comparison-content');
+        container.innerHTML = '';
+        
+        // Compare each field
+        fields.forEach(field => {
+            const currentValue = this.getCurrentValue(field.id);
+            const newValue = field.getValue ? field.getValue(item) : (item[field.id] || '');
+            
+            if (currentValue !== newValue) {
+                container.appendChild(this.createComparisonField(field.label, currentValue, newValue, field.isHtml));
+            }
+        });
+        
+        // Compare authors separately
+        const currentAuthors = this.getCurrentAuthors();
+        if (item.authors && JSON.stringify(currentAuthors) !== JSON.stringify(item.authors)) {
+            container.appendChild(this.createAuthorsComparison(currentAuthors, item.authors));
+        }
+        
+        // After adding all fields to container
+        const hasChanges = container.querySelectorAll('.comparison-field').length > 0;
+        
+        if (!hasChanges) {
+            alert('No differences found between current and new values.');
+            return;
+        }
+
+        // Show comparison view
+        document.getElementById('comparison-container').classList.remove('d-none');
+        document.getElementById('bookpanel').classList.add('d-none');
+        
         this.modal.hide();
+    },
+
+    // Update the createComparisonField method in bookapi:
+    createComparisonField(label, currentValue, newValue, isHtml = false) {
+        const field = document.createElement('div');
+        field.className = `comparison-field ${label.toLowerCase()}`;
+        const fieldId = label.toLowerCase().replace(/\s+/g, '-');
+        
+        field.innerHTML = `
+            <div class="field-header d-flex justify-content-between align-items-center">
+                <span>${label}</span>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-success btn-accept" data-field="${fieldId}">
+                        <i class="bi bi-check-lg"></i> Accept
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-revert" data-field="${fieldId}">
+                        <i class="bi bi-arrow-counterclockwise"></i> Revert
+                    </button>
+                </div>
+            </div>
+            <div class="field-values">
+                <div class="value-container">
+                    <div class="value-label">Current</div>
+                    <div class="value-content" data-field="${fieldId}-current">
+                        ${isHtml ? currentValue : this.escapeHtml(currentValue) || '<span class="text-muted">Empty</span>'}
+                    </div>
+                </div>
+                <div class="value-container changed">
+                    <div class="value-label">New</div>
+                    <div class="value-content" data-field="${fieldId}-new">
+                        ${isHtml ? newValue : this.escapeHtml(newValue) || '<span class="text-muted">Empty</span>'}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add event listeners for accept/revert buttons
+        field.querySelector('.btn-accept').addEventListener('click', () => {
+            this.acceptChange(fieldId, label.toLowerCase(), newValue, isHtml);
+        });
+        
+        field.querySelector('.btn-revert').addEventListener('click', () => {
+            this.revertChange(fieldId, label.toLowerCase(), currentValue, isHtml);
+        });
+        
+        return field;
+    },
+
+    // Similar update for createAuthorsComparison
+    createAuthorsComparison(currentAuthors, newAuthors) {
+        const field = document.createElement('div');
+        field.className = 'comparison-field authors';
+        
+        let rows = '';
+        const maxLength = Math.max(currentAuthors.length, newAuthors.length);
+        
+        for (let i = 0; i < maxLength; i++) {
+            const current = currentAuthors[i] || '';
+            const next = newAuthors[i] || '';
+            const changed = current !== next;
+            
+            rows += `
+                <tr>
+                    <td>${this.escapeHtml(current) || '<span class="text-muted">Empty</span>'}</td>
+                    <td class="${changed ? 'changed' : ''}">${this.escapeHtml(next) || '<span class="text-muted">Empty</span>'}</td>
+                </tr>
+            `;
+        }
+        
+        field.innerHTML = `
+            <div class="field-header d-flex justify-content-between align-items-center">
+                <span>Authors</span>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-success btn-accept" data-field="authors">
+                        <i class="bi bi-check-lg"></i> Accept
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-revert" data-field="authors">
+                        <i class="bi bi-arrow-counterclockwise"></i> Revert
+                    </button>
+                </div>
+            </div>
+            <div class="field-values">
+                <table class="table table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th>Current</th>
+                            <th>New</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        // Add event listeners for accept/revert buttons
+        field.querySelector('.btn-accept').addEventListener('click', () => {
+            this.acceptAuthors(newAuthors);
+        });
+        
+        field.querySelector('.btn-revert').addEventListener('click', () => {
+            this.acceptAuthors(currentAuthors);
+        });
+        
+        return field;
+    },
+
+    // Add these new methods to handle accept/revert actions:
+    acceptChange(fieldId, name, value, isHtml = false) {
+        if (isHtml && name === 'description') {
+            quillEditor.root.innerHTML = value;
+            document.querySelector('#description-input').value = value;
+        } else {
+            const input = document.querySelector(`#bookpanel [name="${name}"]`);
+            if (input) {
+                input.value = value;
+            }
+        }
+        
+        // Update the comparison view
+        const field = document.querySelector(`.comparison-field.${name}`);
+        if (field) {
+            // Update current value display
+            const currentContent = field.querySelector(`[data-field="${fieldId}-current"]`);
+            const newContent = field.querySelector(`[data-field="${fieldId}-new"]`);
+            if (currentContent && newContent) {
+                currentContent.innerHTML = newContent.innerHTML;
+            }
+            // Remove changed styling since values are now the same
+            field.querySelector('.value-container.changed').classList.remove('changed');
+            // Remove the field if we want to hide accepted changes
+            // field.remove();
+        }
+    },
+
+    revertChange(fieldId, name, value, isHtml = false) {
+        // Same as acceptChange but keeps the original value
+        if (isHtml && name === 'description') {
+            quillEditor.root.innerHTML = value;
+            document.querySelector('#description-input').value = value;
+        } else {
+            const input = document.querySelector(`#bookpanel [name="${name}"]`);
+            if (input) {
+                input.value = value;
+            }
+        }
+        
+        // Remove the field since we reverted the change
+        const field = document.querySelector(`.comparison-field.${name}`);
+        if (field) {
+            field.remove();
+        }
+    },
+
+    acceptAuthors(authors) {
+        // Clear existing authors
+        const container = document.getElementById('authors');
+        container.innerHTML = '';
+        
+        // Add new authors
+        authors.forEach((authorName, index) => {
+            const row = author.createAuthorRow(index);
+            row.querySelector('[name^="authorname"]').value = authorName;
+            container.appendChild(row);
+        });
+        
+        // Remove the comparison field
+        const field = document.querySelector('.comparison-field.authors');
+        if (field) {
+            field.remove();
+        }
+    },
+
+    getCurrentValue(fieldId) {
+        if (fieldId === 'description') {
+            return quillEditor ? quillEditor.root.innerHTML : '';
+        }
+        return document.querySelector(`#bookpanel [name="${fieldId}"]`)?.value || '';
+    },
+
+    getCurrentAuthors() {
+        const authors = [];
+        document.querySelectorAll('.author-row').forEach(row => {
+            const name = row.querySelector('input[name^="authorname"]').value;
+            if (name) {
+                authors.push(name);
+            }
+        });
+        return authors;
+    },
+
+    escapeHtml(text) {
+        if (!text) return text;
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     },
     
     updateFields(item, checkEmpty = false, suffix = '') {
@@ -254,9 +543,15 @@ function initializeEditor() {
 
 // Initialize everything when the DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    bookapi.init();
-    author.init();
-    initializeEditor();
+    if (document.getElementById('bookapi')) {
+        bookapi.init();
+    }
+    if (document.getElementById('add-author')) {
+        author.init();
+    }
+    if (document.getElementById('description')) {
+        initializeEditor();
+    }
 
     // Scroll to currently selected book
     //const current = document.querySelector('#booklist .active');
