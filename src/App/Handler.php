@@ -127,21 +127,17 @@ class Handler
             $data['bookdir'] = htmlspecialchars(string: $this->bookdir);
         }
         $data['baseurl'] = $this->baseurl;
-        $data['booklist'] = '';
-        $data['booklist'] .= '<li ' . (empty($params['book']) ? 'class="active"' : '') . '>';
-        $data['booklist'] .= '<a href="?book=">Home</a>';
-        $data['booklist'] .= '</li>';
-        $list = $this->getFileList($this->bookdir, '*.epub', $this->recursive);
-        foreach ($list as $book) {
-            $base = $this->getBookName($book);
-            $name = Util::book_output($base);
-            $data['booklist'] .= '<li ' . ($base == $params['book'] ? 'class="active"' : '') . '>';
-            $data['booklist'] .= '<a href="?book=' . htmlspecialchars($base) . '">' . $name . '</a>';
-            $data['booklist'] .= '</li>';
-        }
+
+        // Generate Bootstrap-compatible booklist
+        $data['booklist'] = $this->generateBooklist($params['book'] ?? null);
+
+        // Generate Bootstrap-compatible alert
         if (isset($this->error)) {
-            $data['alert'] = "alert('" . htmlspecialchars($this->error) . "');";
+            $data['alert'] = $this->generateAlert('danger', $this->error);
+        } else {
+            $data['alert'] = '';
         }
+
         if (empty($this->epub)) {
             $data['license'] = str_replace("\n\n", '</p><p>', htmlspecialchars(file_get_contents($this->rootdir . '/LICENSE')));
             $template = $this->templatedir . 'meta.html';
@@ -149,6 +145,11 @@ class Handler
             $data = $this->getEpubData($this->epub, $data);
             $template = $this->templatedir . 'epub.html';
         }
+
+        // Add timestamp and user info
+        $data['last_updated'] = date('Y-m-d H:i:s');
+        $data['current_user'] = get_current_user(); // or your authentication system's method
+
         header('Content-Type: text/html; charset=utf-8');
         return $this->renderTemplate($template, $data);
     }
@@ -251,7 +252,7 @@ class Handler
     }
 
     /**
-     * Get Epub data
+     * Get Epub data with Bootstrap-compatible form elements
      * @param EPub $epub
      * @param array<string, string> $data
      * @return array<string, string>
@@ -260,25 +261,144 @@ class Handler
     {
         $data['book'] = htmlspecialchars((string) $this->params['book']);
         $data['title'] = htmlspecialchars($epub->getTitle());
+
+        // Generate Bootstrap form groups for authors
         $data['authors'] = '';
         $count = 0;
         foreach ($epub->getAuthors() as $as => $name) {
-            $data['authors'] .= '<p>';
-            $data['authors'] .= '<input type="text" name="authorname[' . $count . ']" value="' . htmlspecialchars($name) . '" />';
-            $data['authors'] .= ' (<input type="text" name="authoras[' . $count . ']" value="' . htmlspecialchars($as) . '" />)';
-            $data['authors'] .= '</p>';
+            $data['authors'] .= '<div class="author-row">';
+            $data['authors'] .= '<div class="row g-2">';
+            $data['authors'] .= '<div class="col">';
+            $data['authors'] .= sprintf(
+                '<input type="text" class="form-control" name="authorname[%d]" value="%s" placeholder="Author Name">',
+                $count,
+                htmlspecialchars($name)
+            );
+            $data['authors'] .= '</div>';
+            $data['authors'] .= '<div class="col">';
+            $data['authors'] .= sprintf(
+                '<input type="text" class="form-control" name="authoras[%d]" value="%s" placeholder="Sort As">',
+                $count,
+                htmlspecialchars($as)
+            );
+            $data['authors'] .= '</div>';
+            $data['authors'] .= '</div>';
+            $data['authors'] .= '</div>';
             $count++;
         }
+
+        // Cover image with Bootstrap classes
         $data['cover'] = '?book=' . htmlspecialchars((string) $this->params['book']) . '&amp;img=1';
         $c = $epub->getCoverInfo();
-        $data['imgclass'] = $c['found'] ? 'hasimg' : 'noimg';
+        $data['imgclass'] = $c['found'] ? 'img-fluid' : 'img-fluid noimg';
+
+        // Other fields
         $data['description'] = htmlspecialchars($epub->getDescription());
         $data['subjects'] = htmlspecialchars(join(', ', $epub->getSubjects()));
         $data['publisher'] = htmlspecialchars($epub->getPublisher());
         $data['copyright'] = htmlspecialchars($epub->getCopyright());
         $data['language'] = htmlspecialchars($epub->getLanguage());
         $data['isbn'] = htmlspecialchars($epub->getISBN());
+
         return $data;
+    }
+    
+    /**
+     * Generate Bootstrap-compatible booklist HTML
+     * @param ?string $currentBook
+     * @return string
+     */
+    protected function generateBooklist(?string $currentBook): string
+    {
+        $html = '';
+        
+        // Home link
+        $html .= sprintf(
+            '<a href="?book=" class="list-group-item list-group-item-action%s">',
+            empty($currentBook) ? ' active' : ''
+        );
+        $html .= '<div class="d-flex w-100 justify-content-between">';
+        $html .= '<h6 class="mb-1">Home</h6>';
+        $html .= '</div>';
+        $html .= '</a>';
+        
+        // Book list
+        $list = $this->getFileList($this->bookdir, '*.epub', $this->recursive);
+        foreach ($list as $book) {
+            $base = $this->getBookName($book);
+            $bookInfo = $this->getBookInfo($book);
+            
+            $html .= sprintf(
+                '<a href="?book=%s" class="list-group-item list-group-item-action%s">',
+                htmlspecialchars($base),
+                ($base === $currentBook ? ' active' : '')
+            );
+            $html .= '<div class="d-flex w-100 justify-content-between">';
+            $html .= sprintf('<h6 class="mb-1">%s</h6>', htmlspecialchars($bookInfo['title']));
+            $html .= '</div>';
+            if (!empty($bookInfo['author'])) {
+                $html .= sprintf(
+                    '<small class="text-muted">%s</small>',
+                    htmlspecialchars($bookInfo['author'])
+                );
+            }
+            $html .= '</a>';
+        }
+        
+        return $html;
+    }
+    
+    /**
+     * Generate Bootstrap-compatible alert HTML
+     * @param string $type 'success'|'danger'|'warning'|'info'
+     * @param string $message
+     * @return string
+     */
+    protected function generateAlert(string $type, string $message): string
+    {
+        // Instead of JavaScript alert, create Bootstrap alert
+        $icon = match($type) {
+            'success' => 'check-circle-fill',
+            'danger' => 'exclamation-triangle-fill',
+            'warning' => 'exclamation-triangle-fill',
+            'info' => 'info-circle-fill',
+            default => 'info-circle-fill'
+        };
+        
+        return sprintf(
+            '<div class="alert alert-%s alert-dismissible fade show" role="alert">
+                <i class="bi bi-%s me-2"></i>
+                %s
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>',
+            htmlspecialchars($type),
+            $icon,
+            htmlspecialchars($message)
+        );
+    }
+    
+    /**
+     * Get book info from epub file
+     * @param string $bookPath
+     * @return array{title: string, author: string}
+     */
+    protected function getBookInfo(string $bookPath): array
+    {
+        try {
+            $epub = new EPub($bookPath, ZipEdit::class);
+            $title = $epub->getTitle();
+            $authors = $epub->getAuthors();
+            $author = !empty($authors) ? array_values($authors)[0] : '';
+            return [
+                'title' => $title,
+                'author' => $author
+            ];
+        } catch (Exception $e) {
+            return [
+                'title' => basename($bookPath, '.epub'),
+                'author' => ''
+            ];
+        }
     }
 
     /**

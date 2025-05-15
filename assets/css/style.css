@@ -1,192 +1,92 @@
-body, td, th, input, textarea {
-    font-family: "Arial", sans-serif;
-    color: #333;
-    font-size: 15px;
-}
-
-a {
-    color: #4183C4;
-    text-decoration: none;
-}
-
-a:hover,
-a:active {
-    background-color: #efefef;
-}
-
-#wrapper {
-    height: 95%;
-    width:  920px;
-    margin: auto;
-    padding: 0;
-    border: 1px solid #ccc;
-}
-
-#booklist {
-    float: left;
-    width: 300px;
+/* Custom styles to supplement Bootstrap */
+html, body {
     height: 100%;
-    overflow: auto;
-    list-style-type: none;
-    padding: 0;
-    margin: 0 25px 0 0;
-    font-size: 13px;
 }
 
-#booklist li {
-    padding: 5px;
+/* Sidebar styles */
+.sidebar {
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
 }
 
-#booklist li:hover {
-    background-color: #efefef;
+#booklist .list-group-item {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
 }
 
-#booklist li span {
+#booklist .list-group-item.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+#booklist .list-group-item .author {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+#booklist .list-group-item.active .author {
+    color: #dee2e6;
+}
+
+/* Form styles */
+.author-row {
+    position: relative;
+    padding-right: 2rem;
+}
+
+.remove-author {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Book API results */
+.result-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.result-card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.result-card img {
+    max-height: 150px;
+    object-fit: contain;
+}
+
+/* Comparison view */
+.comparison-active .comparison {
+    display: block !important;
+}
+
+.comparison-active .form-label::after {
+    content: " (Original)";
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.comparison-active .comparison-label::after {
+    content: " (Comparison)";
+    color: #0d6efd;
+    font-size: 0.875rem;
+}
+
+/** added after generating booklist and alert */
+
+.author-row2 {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.noimg {
+    opacity: 0.3;
+}
+
+.list-group-item small {
     display: block;
-}
-#booklist li span.author {
-    padding-left: 5px;
-    font-size: 11px;
-}
-
-#booklist li.active {
-    background-color: #4183C4;
-}
-#booklist li.active a,
-#booklist li.active a:hover,
-#booklist li.active a:active {
-    color: #efefef;
-    background-color: #4183C4;
-}
-
-
-#bookpanel {
-    float: left;
-    width: 590px;
-    height: 100%;
-    overflow: auto;
-}
-
-.center {
-    text-align: center;
-}
-
-.hidden {
-    display: none;
-}
-
-.shown {
-    display: table-cell;
-}
-
-table {
-    margin-bottom: 20px;
-}
-
-table th,
-table td {
-    vertical-align: top;
-    padding: 0 0 5px 0;
-}
-
-table th {
-    text-align: right;
-    font-weight: bold;
-    padding: 3px;
-    padding-right: 20px;
-}
-
-table td textarea,
-table td input {
-    width: 450px;
-    border: none;
-    padding: 3px;
-    margin: 0;
-    border-bottom: solid 1px #dfdfdf;
-}
-
-table td .cleditormain {
-    border: solid 1px #dfdfdf;
-}
-
-table td textarea {
-    height: 250px;
-}
-
-table td p {
-    margin: 0;
-    padding: 0;
-}
-
-table td p input {
-    width: 200px;
-}
-
-table td textarea:focus,
-table td input:focus {
-    border: 1px solid #4183C4;
-}
-
-table th img {
-    margin-top: 20px;
-}
-
-a.addauthor {
-    margin-top: -20px;
-    float: right;
-}
-
-div.license {
-    font-size: 11px;
-    margin-top: 300px;
-}
-
-#bookapi-s {
-    float: left;
-}
-
-#bookapi-q {
-    width: 600px;
-}
-
-#bookapi-l {
-    width: 20px;
-}
-
-#bookapi {
-    font-size: 12px;
-}
-
-#bookapi div.head {
-    margin-bottom: 10px;
-}
-
-#bookapi div.result {
-    clear: both;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #ccc;
-    min-height: 130px;
-}
-
-#bookapi div.result div {
-    margin-left: 70px;
-}
-
-#bookapi div.result div.buttons {
-    float: right;
-    text-align: right;
-}
-
-#bookapi img {
-    margin-top: 30px;
-    width: 60px;
-    float: left;
-}
-
-#bookapi h1.title {
-    font-size: 14px;
-}
-
-#bookapi span.subjects {
-    font-style: italic;
+    margin-top: 0.25rem;
 }
