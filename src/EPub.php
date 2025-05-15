@@ -1842,24 +1842,9 @@ class EPub
      */
     public function getCalibreAnnotations($data = null)
     {
-        if (!empty($data)) {
-            $this->loadXmlData($data);
-        }
-        $annotations = [];
-        $nodes = $this->xpath->query('//opf:metadata/opf:meta[@name="calibre:annotation"]');
-        if ($nodes->length == 0) {
-            return $annotations;
-        }
-        foreach ($nodes as $node) {
-            /** @var EpubDomElement $node */
-            $content = $node->getAttribute('content');
-            try {
-                $annotations[] = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-            } catch (JsonException) {
-                $annotations[] = $content;
-            }
-        }
-        return $annotations;
+        // from metadata.opf: xpath->query('//opf:metadata/opf:meta[@name="calibre:annotation"]');
+        $metadata = Metadata::parseData($data);
+        return $metadata->getAnnotations();
     }
 
     /**
