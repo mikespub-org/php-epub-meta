@@ -32,6 +32,9 @@ $templatedir = dirname(__DIR__) . '/templates/';
 // cache directory for Google Books API calls (optional)
 $cachedir = null;
 $cachedir = dirname(__DIR__) . '/cache/';
+// add parent link before home link
+//$parent = ['title' => 'Parent', 'link' => '../../'];
+$parent = [];
 
 // 1. create config array with the options above
 $config = [
@@ -41,6 +44,7 @@ $config = [
     'rename' => $rename,
     'templatedir' => $templatedir,
     'cachedir' => $cachedir,
+    'parent' => $parent,
 ];
 // 2. instantiate the app handler with the config array
 $handler = new AppHandler($config);

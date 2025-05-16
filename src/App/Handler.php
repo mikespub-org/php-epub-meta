@@ -24,13 +24,15 @@ class Handler
     protected bool $recursive;
     protected string $baseurl;
     protected bool $rename;
+    /** @var array<string, mixed> */
+    protected array $parent;
     protected ?EPub $epub = null;
     protected ?string $error = null;
     /** @var array<string, mixed> */
     protected array $params;
 
     /**
-     * @param array<string, string|bool> $config
+     * @param array<string, string|bool|array<string, mixed>> $config
      */
     public function __construct(array $config = [])
     {
@@ -41,6 +43,7 @@ class Handler
         $this->recursive = $config['recursive'] ?? false;
         $this->baseurl = $config['baseurl'] ?? '..';
         $this->rename = $config['rename'] ?? true;
+        $this->parent = $config['parent'] ?? [];
     }
 
     /**
@@ -302,7 +305,7 @@ class Handler
 
         return $data;
     }
-    
+
     /**
      * Generate Bootstrap-compatible booklist HTML
      * @param ?string $currentBook
@@ -311,7 +314,19 @@ class Handler
     protected function generateBooklist(?string $currentBook): string
     {
         $html = '';
-        
+
+        // Parent link
+        if (!empty($this->parent)) {
+            $html .= sprintf(
+                '<a href="' . $this->parent['link'] . '" class="list-group-item list-group-item-action%s">',
+                ''
+            );
+            $html .= '<div class="d-flex w-100 justify-content-between">';
+            $html .= '<h6 class="mb-1">' . $this->parent['title'] . '</h6>';
+            $html .= '</div>';
+            $html .= '</a>';
+        }
+
         // Home link
         $html .= sprintf(
             '<a href="?book=" class="list-group-item list-group-item-action%s">',
@@ -321,13 +336,13 @@ class Handler
         $html .= '<h6 class="mb-1">Home</h6>';
         $html .= '</div>';
         $html .= '</a>';
-        
+
         // Book list
         $list = $this->getFileList($this->bookdir, '*.epub', $this->recursive);
         foreach ($list as $book) {
             $base = $this->getBookName($book);
             $bookInfo = $this->getBookInfo($book);
-            
+
             $html .= sprintf(
                 '<a href="?book=%s" class="list-group-item list-group-item-action%s">',
                 htmlspecialchars($base),
@@ -344,10 +359,10 @@ class Handler
             }
             $html .= '</a>';
         }
-        
+
         return $html;
     }
-    
+
     /**
      * Generate Bootstrap-compatible alert HTML
      * @param string $type 'success'|'danger'|'warning'|'info'
@@ -357,14 +372,14 @@ class Handler
     protected function generateAlert(string $type, string $message): string
     {
         // Instead of JavaScript alert, create Bootstrap alert
-        $icon = match($type) {
+        $icon = match ($type) {
             'success' => 'check-circle-fill',
             'danger' => 'exclamation-triangle-fill',
             'warning' => 'exclamation-triangle-fill',
             'info' => 'info-circle-fill',
             default => 'info-circle-fill'
         };
-        
+
         return sprintf(
             '<div class="alert alert-%s alert-dismissible fade show" role="alert">
                 <i class="bi bi-%s me-2"></i>
@@ -376,7 +391,7 @@ class Handler
             htmlspecialchars($message)
         );
     }
-    
+
     /**
      * Get book info from epub file
      * @param string $bookPath
@@ -391,12 +406,12 @@ class Handler
             $author = !empty($authors) ? array_values($authors)[0] : '';
             return [
                 'title' => $title,
-                'author' => $author
+                'author' => $author,
             ];
         } catch (Exception $e) {
             return [
                 'title' => basename($bookPath, '.epub'),
-                'author' => ''
+                'author' => '',
             ];
         }
     }
