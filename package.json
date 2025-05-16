@@ -3,6 +3,7 @@
   "packageManager": "yarn@4.9.1",
   "dependencies": {
     "bootstrap": "^5.3.6",
+    "bootstrap-icons": "^1.13.1",
     "quill": "^2.0.3"
   },
   "license": "MIT"
