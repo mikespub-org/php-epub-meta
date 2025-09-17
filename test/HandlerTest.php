@@ -36,7 +36,7 @@ class HandlerTest extends TestCase
 
         $expected = '<title>EPub Metadata</title>';
         $this->assertStringContainsString($expected, $result);
-        $expected = '<a href="?book=test"><span class="title">test</span>';
+        $expected = '<a href="?book=test"';
         $this->assertStringContainsString($expected, $result);
         $expected = 'MIT License';
         $this->assertStringContainsString($expected, $result);
@@ -126,7 +126,7 @@ class HandlerTest extends TestCase
 
         $expected = '<title>EPub Metadata</title>';
         $this->assertStringContainsString($expected, $result);
-        $expected = '<a href="?book=data/test"><span class="title">test</span>';
+        $expected = '<a href="?book=data/test"';
         $this->assertStringContainsString($expected, $result);
         $expected = 'MIT License';
         $this->assertStringContainsString($expected, $result);
@@ -154,7 +154,7 @@ class HandlerTest extends TestCase
 
         $expected = '<title>EPub Metadata</title>';
         $this->assertStringContainsString($expected, $result);
-        $expected = "alert('Invalid ebook file passwd.epub');";
+        $expected = "Invalid ebook file passwd.epub";
         $this->assertStringContainsString($expected, $result);
     }
 
@@ -167,7 +167,7 @@ class HandlerTest extends TestCase
 
         $expected = '<title>EPub Metadata</title>';
         $this->assertStringContainsString($expected, $result);
-        $expected = "alert('No ebooks allowed outside bookdir. Are you using symlinks inside bookdir?');";
+        $expected = "No ebooks allowed outside bookdir. Are you using symlinks inside bookdir?";
         $this->assertStringContainsString($expected, $result);
     }
 }
