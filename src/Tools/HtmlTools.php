@@ -62,10 +62,10 @@ class HtmlTools
      */
     public static function stripHtmlTags(
         $html,
-        $keep =
-        ['title', 'br', 'p', 'h1','h2','h3','h4','h5','span','div','i','strong','b', 'table', 'td', 'th', 'tr'],
-        $drop =
-        ['head','style']
+        $keep
+        = ['title', 'br', 'p', 'h1','h2','h3','h4','h5','span','div','i','strong','b', 'table', 'td', 'th', 'tr'],
+        $drop
+        = ['head','style']
     ) {
         $htmls = is_array($html) ? $html : [$html];
         foreach ($htmls as &$htmlString) {

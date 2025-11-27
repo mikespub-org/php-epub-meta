@@ -56,7 +56,7 @@ class Util
             $author = '';
         }
 
-        return '<span class="title">' . htmlspecialchars($title) . '</span>' .
-            '<span class="author">' . htmlspecialchars($author) . '</author>';
+        return '<span class="title">' . htmlspecialchars($title) . '</span>'
+            . '<span class="author">' . htmlspecialchars($author) . '</author>';
     }
 }

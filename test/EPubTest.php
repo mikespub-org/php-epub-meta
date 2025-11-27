@@ -903,7 +903,13 @@ class EPubTest extends TestCase
         ZipEdit::copyTest(static::TEST_EPUB_COPY, static::TEST_EPUB_COVER);
         $epub = new EPub(static::TEST_EPUB_COVER);
         $oldManifest = $this->epub->getManifest();
+        foreach ($oldManifest as $item) {
+            $item->getData();
+        }
         $newManifest = $epub->getManifest();
+        foreach ($newManifest as $item) {
+            $item->getData();
+        }
         $this->assertEquals($oldManifest, $newManifest);
     }
 }
