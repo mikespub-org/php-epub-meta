@@ -462,7 +462,7 @@ class EPub
      * EPUB 2 navigation control file (NCX format)
      * See https://idpf.org/epub/20/spec/OPF_2.0_latest.htm#Section2.4.1
      * @param DOMNode $node
-     * @return array<string, string>
+     * @return array{title: string, src: string, children?: list<array<mixed>>}
      */
     protected function getNavPointDetail($node)
     {
@@ -486,7 +486,7 @@ class EPub
      * EPUB 3 navigation document (toc nav element)
      * See https://www.w3.org/TR/epub-33/#sec-nav-toc
      * @param DOMNode $node
-     * @return array<string, string>
+     * @return array{title: string, src: string, children?: list<array<mixed>>}
      */
     protected function getNavTocListItem($node)
     {

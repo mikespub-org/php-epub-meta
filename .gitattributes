@@ -4,3 +4,4 @@ phpstan*       export-ignore
 phpunit*       export-ignore
 app/           export-ignore
 test/          export-ignore
+.php-cs-fixer.dist.php export-ignore
