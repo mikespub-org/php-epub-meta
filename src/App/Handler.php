@@ -11,6 +11,8 @@
 
 namespace SebLucas\EPubMeta\App;
 
+use SebLucas\EPubMeta\BookInterface;
+use SebLucas\EPubMeta\Comic;
 use SebLucas\EPubMeta\EPub;
 use SebLucas\EPubMeta\Tools\ZipEdit;
 use Exception;
@@ -24,9 +26,10 @@ class Handler
     protected bool $recursive;
     protected string $baseurl;
     protected bool $rename;
-    /** @var array<string, mixed> */
+    /** @var array{link: string, title: string} */
     protected array $parent;
-    protected ?EPub $epub = null;
+    /** @var BookInterface|null */
+    protected $epub = null;
     protected ?string $error = null;
     /** @var array<string, mixed> */
     protected array $params;
@@ -127,7 +130,7 @@ class Handler
         if (str_starts_with($this->bookdir, $this->rootdir . DIRECTORY_SEPARATOR)) {
             $data['bookdir'] = htmlspecialchars(str_replace($this->rootdir . DIRECTORY_SEPARATOR, '', $this->bookdir));
         } else {
-            $data['bookdir'] = htmlspecialchars(string: $this->bookdir);
+            $data['bookdir'] = htmlspecialchars($this->bookdir);
         }
         $data['baseurl'] = $this->baseurl;
 
@@ -232,31 +235,41 @@ class Handler
      * Get Epub file
      * @throws Exception
      * @param string $book
-     * @return EPub
+     * @return BookInterface
      */
     protected function getEpubFile($book)
     {
         // Alice's Adventures in Wonderland - Lewis Carroll.epub
         if (!$this->recursive) {
             $book = preg_replace('/[^\w ._\'-]+/', '', $book);
-            $book = $this->bookdir . basename($book . '.epub'); // no upper dirs, lowers might be supported later
-            return new EPub($book, ZipEdit::class);
+            $book = $this->bookdir . basename($book); // no upper dirs, lowers might be supported later
+            if (file_exists($book . '.cbz')) {
+                return new Comic($book . '.cbz', ZipEdit::class);
+            }
+            return new EPub($book . '.epub', ZipEdit::class);
         }
         // Lewis Carroll/Alice's Adventures in Wonderland (17)/Alice's Adventures in Wonderland - Lewis Carroll.epub
         $book = preg_replace('/[^\w ._\'(),\/-]+/', '', $book);
-        $book = $this->bookdir . $book . '.epub'; // no upper dirs
+        $book = $this->bookdir . $book; // no upper dirs
+        if (file_exists($book . '.cbz')) {
+            $book .= '.cbz';
+            $class = Comic::class;
+        } else {
+            $book .= '.epub';
+            $class = EPub::class;
+        }
         if (!file_exists($book)) {
             throw new Exception('Invalid ebook file ' . htmlspecialchars(basename($book)));
         }
         if (!str_starts_with(realpath($book), realpath($this->bookdir) . DIRECTORY_SEPARATOR)) {
             throw new Exception('No ebooks allowed outside bookdir. Are you using symlinks inside bookdir?');
         }
-        return new EPub($book, ZipEdit::class);
+        return new $class($book, ZipEdit::class);
     }
 
     /**
      * Get Epub data with Bootstrap-compatible form elements
-     * @param EPub $epub
+     * @param BookInterface $epub
      * @param array<string, string> $data
      * @return array<string, string>
      */
@@ -268,6 +281,7 @@ class Handler
         // Generate Bootstrap form groups for authors
         $data['authors'] = '';
         $count = 0;
+        $placeholder = $epub instanceof Comic ? 'Role' : 'Sort As';
         foreach ($epub->getAuthors() as $as => $name) {
             $data['authors'] .= '<div class="author-row">';
             $data['authors'] .= '<div class="row g-2">';
@@ -280,9 +294,10 @@ class Handler
             $data['authors'] .= '</div>';
             $data['authors'] .= '<div class="col">';
             $data['authors'] .= sprintf(
-                '<input type="text" class="form-control" name="authoras[%d]" value="%s" placeholder="Sort As">',
+                '<input type="text" class="form-control" name="authoras[%d]" value="%s" placeholder="%s">',
                 $count,
-                htmlspecialchars($as)
+                htmlspecialchars($as),
+                $placeholder
             );
             $data['authors'] .= '</div>';
             $data['authors'] .= '</div>';
@@ -299,9 +314,9 @@ class Handler
         $data['description'] = $epub->getDescription();  // don't use htmlspecialchars here anymore for div
         $data['subjects'] = htmlspecialchars(join(', ', $epub->getSubjects()));
         $data['publisher'] = htmlspecialchars($epub->getPublisher());
-        $data['copyright'] = htmlspecialchars($epub->getCopyright());
+        $data['copyright'] = htmlspecialchars($epub instanceof EPub ? $epub->getCopyright() : '');
         $data['language'] = htmlspecialchars($epub->getLanguage());
-        $data['isbn'] = htmlspecialchars($epub->getISBN());
+        $data['isbn'] = htmlspecialchars($epub->getIsbn());
 
         return $data;
     }
@@ -338,7 +353,11 @@ class Handler
         $html .= '</a>';
 
         // Book list
-        $list = $this->getFileList($this->bookdir, '*.epub', $this->recursive);
+        $list = array_merge(
+            $this->getFileList($this->bookdir, '*.epub', $this->recursive),
+            $this->getFileList($this->bookdir, '*.cbz', $this->recursive)
+        );
+        sort($list);
         foreach ($list as $book) {
             $base = $this->getBookName($book);
             $bookInfo = $this->getBookInfo($book);
@@ -400,17 +419,26 @@ class Handler
     protected function getBookInfo(string $bookPath): array
     {
         try {
-            $epub = new EPub($bookPath, ZipEdit::class);
-            $title = $epub->getTitle();
-            $authors = $epub->getAuthors();
-            $author = !empty($authors) ? array_values($authors)[0] : '';
+            if (str_ends_with(strtolower($bookPath), '.cbz')) {
+                $epub = new Comic($bookPath, ZipEdit::class);
+                $title = $epub->getTitle();
+                $author = $epub->getWriter();
+            } else {
+                $epub = new EPub($bookPath, ZipEdit::class);
+                $title = $epub->getTitle();
+                $authors = $epub->getAuthors();
+                $author = !empty($authors) ? array_values($authors)[0] : '';
+            }
+            if (empty($title)) {
+                $title = $this->getBookName($bookPath);
+            }
             return [
                 'title' => $title,
                 'author' => $author,
             ];
         } catch (Exception $e) {
             return [
-                'title' => basename($bookPath, '.epub'),
+                'title' => pathinfo($bookPath, PATHINFO_FILENAME),
                 'author' => '',
             ];
         }
@@ -418,9 +446,9 @@ class Handler
 
     /**
      * Save Epub data
-     * @param EPub $epub
+     * @param BookInterface $epub
      * @param array<string, mixed> $params
-     * @return EPub
+     * @return BookInterface
      */
     protected function saveEpubData($epub, $params)
     {
@@ -428,29 +456,80 @@ class Handler
         $epub->setDescription((string) $params['description']);
         $epub->setLanguage((string) $params['language']);
         $epub->setPublisher((string) $params['publisher']);
-        $epub->setCopyright((string) $params['copyright']);
+        if ($epub instanceof EPub) {
+            $epub->setCopyright((string) $params['copyright']);
+        }
         $epub->setIsbn((string) $params['isbn']);
         $epub->setSubjects((string) $params['subjects']);
 
+        $this->processAuthors($epub, $params);
+        $cover = $this->processCover($epub, $params);
+
+        // save the ebook
+        try {
+            $epub->save();
+        } catch (Exception $e) {
+            $this->error = $e->getMessage();
+        }
+
+        // clean up temporary cover file after saving epub
+        if ($cover) {
+            @unlink($cover);
+        }
+
+        return $epub;
+    }
+
+    /**
+     * Process author data
+     * @param BookInterface $epub
+     * @param array<string, mixed> $params
+     * @return void
+     */
+    protected function processAuthors($epub, $params)
+    {
         if (empty($params['authorname'])) {
             $params['authorname'] = [];
         }
         if (empty($params['authoras'])) {
             $params['authoras'] = [];
         }
+        $params['authoras'] = (array) $params['authoras'];
         $authors = [];
-        foreach ((array) $params['authorname'] as $num => $name) {
-            if ($name) {
-                $as = $params['authoras'][$num];
-                if (!$as) {
-                    $as = $name;
+        if ($epub instanceof Comic) {
+            foreach ((array) $params['authorname'] as $num => $name) {
+                if ($name) {
+                    $role = !empty($params['authoras'][$num]) ? $params['authoras'][$num] : 'Writer';
+                    if (in_array($role, Comic::CREATOR_ROLES)) {
+                        if (!isset($authors[$role])) {
+                            $authors[$role] = [];
+                        }
+                        $authors[$role][] = $name;
+                    }
                 }
-                $authors[$as] = $name;
+            }
+            foreach ($authors as $role => $names) {
+                $authors[$role] = implode(', ', $names);
+            }
+        } else {
+            foreach ((array) $params['authorname'] as $num => $name) {
+                if ($name) {
+                    $as = !empty($params['authoras'][$num]) ? $params['authoras'][$num] : $name;
+                    $authors[$as] = $name;
+                }
             }
         }
         $epub->setAuthors($authors);
+    }
 
-        // handle image
+    /**
+     * Process cover image
+     * @param BookInterface $epub
+     * @param array<string, mixed> $params
+     * @return string
+     */
+    protected function processCover($epub, $params)
+    {
         $cover = '';
         if (preg_match('/^https?:\/\//i', (string) $params['coverurl'])) {
             $data = @file_get_contents($params['coverurl']);
@@ -465,30 +544,19 @@ class Handler
         if ($cover) {
             $info = @getimagesize($cover);
             if (preg_match('/^image\/(gif|jpe?g|png)$/', $info['mime'])) {
-                $epub->setCoverInfo($cover, $info['mime']);
+                $epub->setCover($cover, $info['mime']);
             } else {
                 $this->error = 'Not a valid image file' . $cover;
             }
         }
 
-        // save the ebook
-        try {
-            $epub->save();
-        } catch (Exception $e) {
-            $this->error = $e->getMessage();
-        }
-
-        // clean up temporary cover file
-        if ($cover) {
-            @unlink($cover);
-        }
-
-        return $epub;
+        // return temporary cover file here
+        return $cover;
     }
 
     /**
      * Rename Epub file
-     * @param EPub $epub
+     * @param BookInterface $epub
      * @return string
      */
     protected function renameEpubFile($epub)
@@ -496,11 +564,18 @@ class Handler
         if (!$this->rename) {
             return $epub->file();
         }
-        $author = array_keys($epub->getAuthors())[0];
+        if ($epub instanceof Comic) {
+            $author = $epub->getWriter();
+            $ext = '.cbz';
+        } else {
+            $authors = $epub->getAuthors();
+            $author = !empty($authors) ? array_keys($authors)[0] : '';
+            $ext = '.epub';
+        }
         $title  = $epub->getTitle();
         $new    = Util::to_file($author . '-' . $title);
         // @todo allow recursive too when renaming?
-        $new    = $this->bookdir . $new . '.epub';
+        $new    = $this->bookdir . $new . $ext;
         $old    = $epub->file();
         if (realpath($new) != realpath($old)) {
             if (!@rename($old, $new)) {
@@ -518,10 +593,11 @@ class Handler
     protected function getBookName($book)
     {
         if (!$this->recursive) {
-            return basename($book, '.epub');
+            return pathinfo($book, PATHINFO_FILENAME);
         }
         $book = str_replace(realpath($this->bookdir) . DIRECTORY_SEPARATOR, '', realpath($book));
-        $book = str_replace('.epub', '', $book);
+        $book = preg_replace('/\.epub$/i', '', $book);
+        $book = preg_replace('/\.cbz$/i', '', $book);
         return $book;
     }
 
@@ -538,7 +614,9 @@ class Handler
         }
         $content = file_get_contents($template);
         foreach ($data as $name => $value) {
-            $content = preg_replace('/{{\s*' . $name . '\s*}}/', $value, $content);
+            $content = preg_replace_callback('/{{\s*' . preg_quote($name, '/') . '\s*}}/', function () use ($value) {
+                return $value;
+            }, $content);
         }
         return $content;
     }

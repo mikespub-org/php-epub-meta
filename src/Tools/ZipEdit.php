@@ -32,6 +32,7 @@ class ZipEdit
     private $mChanges = [];
     /** @var string|null */
     private $mFileName;
+    private bool $mIgnoreDir = false;
     private bool $mSaveMe = false;
 
     public function __construct()
@@ -53,7 +54,7 @@ class ZipEdit
      * Open a zip file and read it's entries
      *
      * @param string $inFileName
-     * @param int|null $inFlags
+     * @param int|null $inFlags use ZipArchive::FL_NODIR to ignore directory
      * @return boolean True if zip file has been correctly opended, else false
      */
     public function Open($inFileName, $inFlags = 0)  // ZipArchive::RDONLY)
@@ -67,6 +68,9 @@ class ZipEdit
         }
 
         $this->mFileName = $inFileName;
+        if ($inFlags == ZipArchive::FL_NODIR) {
+            $this->mIgnoreDir = true;
+        }
 
         $this->mEntries = [];
         $this->mChanges = [];
@@ -74,6 +78,15 @@ class ZipEdit
         for ($i = 0; $i <  $this->mZip->numFiles; $i++) {
             $entry =  $this->mZip->statIndex($i);
             $fileName = $entry['name'];
+            if (str_starts_with($fileName, '__MACOSX')) {
+                continue;
+            }
+            if (empty($entry['size'])) {
+                continue;
+            }
+            if ($this->mIgnoreDir) {
+                $fileName = basename($fileName);
+            }
             $this->mEntries[$fileName] = $entry;
             $this->mChanges[$fileName] = ['status' => 'unchanged'];
         }
@@ -86,7 +99,7 @@ class ZipEdit
      *
      * @param string $inFileName File to search
      *
-     * @return boolean True if the file exist, else false
+     * @return bool True if the file exist, else false
      */
     public function FileExists($inFileName)
     {
@@ -102,6 +115,21 @@ class ZipEdit
     }
 
     /**
+     * Get actual entry name for a file
+     *
+     * @param string $inFileName File to get entry name for
+     * @return string|bool
+     */
+    public function getEntryName($inFileName)
+    {
+        if (!isset($this->mEntries[$inFileName])) {
+            return false;
+        }
+
+        return $this->mEntries[$inFileName]['name'];
+    }
+
+    /**
      * Read the content of a file in the zip entries
      *
      * @param string $inFileName File to search
@@ -114,7 +142,8 @@ class ZipEdit
             return false;
         }
 
-        if (!isset($this->mEntries[$inFileName])) {
+        $entryName = $this->getEntryName($inFileName);
+        if (empty($entryName)) {
             return false;
         }
 
@@ -123,7 +152,7 @@ class ZipEdit
         $changes = $this->mChanges[$inFileName] ?? ['status' => 'unchanged'];
         switch ($changes['status']) {
             case 'unchanged':
-                $data = $this->mZip->getFromName($inFileName);
+                $data = $this->mZip->getFromName($entryName);
                 break;
             case 'added':
             case 'modified':
@@ -153,12 +182,13 @@ class ZipEdit
             return false;
         }
 
-        if (!isset($this->mEntries[$inFileName])) {
+        $entryName = $this->getEntryName($inFileName);
+        if (empty($entryName)) {
             return false;
         }
 
         // @todo streaming of added/modified data?
-        return $this->mZip->getStream($inFileName);
+        return $this->mZip->getStream($entryName);
     }
 
     /**
@@ -172,9 +202,13 @@ class ZipEdit
         if (!isset($this->mZip)) {
             return false;
         }
+        $entryName = $inFileName;
+        if ($this->mIgnoreDir) {
+            $inFileName = basename($inFileName);
+        }
 
         $this->mEntries[$inFileName] = [
-            'name' => $inFileName,  // 'foobar/baz',
+            'name' => $entryName,  // 'foobar/baz',
             'size' => strlen($inData),
             'mtime' => time(),  // 1123164748,
         ];
@@ -193,9 +227,13 @@ class ZipEdit
         if (!isset($this->mZip)) {
             return false;
         }
+        $entryName = $inFileName;
+        if ($this->mIgnoreDir) {
+            $inFileName = basename($inFileName);
+        }
 
         $this->mEntries[$inFileName] = [
-            'name' => $inFileName,  // 'foobar/baz',
+            'name' => $entryName,  // 'foobar/baz',
             'size' => filesize($inFilePath),
             'mtime' => filemtime($inFilePath),  // 1123164748,
         ];
@@ -210,7 +248,8 @@ class ZipEdit
      */
     public function FileDelete($inFileName)
     {
-        if (!$this->FileExists($inFileName)) {
+        $entryName = $this->getEntryName($inFileName);
+        if (empty($entryName)) {
             return false;
         }
 
@@ -232,13 +271,17 @@ class ZipEdit
         if (!isset($this->mZip)) {
             return false;
         }
+        $entryName = $inFileName;
+        if ($this->mIgnoreDir) {
+            $inFileName = basename($inFileName);
+        }
 
         if ($inData === false) {
             return $this->FileDelete($inFileName);
         }
 
         $this->mEntries[$inFileName] ??= [];
-        $this->mEntries[$inFileName]['name'] = $inFileName;
+        $this->mEntries[$inFileName]['name'] = $entryName;
         $this->mEntries[$inFileName]['size'] = strlen($inData);
         $this->mEntries[$inFileName]['mtime'] = time();
         $this->mChanges[$inFileName] = ['status' => 'modified', 'data' => $inData];
@@ -363,10 +406,11 @@ class ZipEdit
             $changes = $this->mChanges[$fileName];
             switch ($changes['status']) {
                 case 'unchanged':
+                    $entryName = $entry['name'];
                     // Automatic binding of $this
-                    $callback = function () use ($fileName) {
+                    $callback = function () use ($entryName) {
                         // this expects a stream as result, not the actual data
-                        return $this->mZip->getStream($fileName);
+                        return $this->mZip->getStream($entryName);
                     };
                     $date = new DateTime();
                     $date->setTimestamp($entry['mtime']);
@@ -398,6 +442,32 @@ class ZipEdit
         }
 
         $outZipStream->finish();
+    }
+
+    /**
+     * Get the stat entries for all files in a ZIP file
+     * @return array<mixed> (filename => details of the entry)
+     */
+    public function getZipEntries()
+    {
+        return $this->mEntries;
+    }
+
+    /**
+     * Get list of files matching pattern sorted naturally
+     * @param string $pattern match image files by default
+     * @return string[]
+     */
+    public function findFiles($pattern = '/\.(jpg|jpeg|png|gif|webp|svg)$/i')
+    {
+        $files = [];
+        foreach (array_keys($this->mEntries) as $name) {
+            if (preg_match($pattern, $name)) {
+                $files[] = (string) $name;
+            }
+        }
+        natcasesort($files);
+        return array_values($files);
     }
 
     /**

@@ -1,6 +1,7 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Call to an undefined method DOMNode\\:\\:getAttribute\\(\\)\\.$#"
+			message: '#^Call to an undefined method DOMNode\:\:getAttribute\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: src/Data/Item.php

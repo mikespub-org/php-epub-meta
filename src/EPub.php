@@ -29,7 +29,7 @@ use InvalidArgumentException;
 use JsonException;
 use ZipArchive;
 
-class EPub
+class EPub implements BookInterface
 {
     /** Identifier for cover image inserted by this lib. */
     public const COVER_ID = 'php-epub-meta-cover';
@@ -2207,12 +2207,14 @@ class EPub
     /**
      * Get the stat entries for all files in a ZIP file
      *
-     * @param string $file|null Path to a ZIP file or null for current file
+     * @param ?string $file Path to a ZIP file or null for current file
      * @return array<mixed> (filename => details of the entry)
      */
     public function getZipEntries($file = null)
     {
-        $file ??= $this->file;
+        if (is_null($file) || $file == $this->file) {
+            return $this->zip->getZipEntries();
+        }
         $entries = [];
 
         $zip = new ZipArchive();
@@ -2232,7 +2234,7 @@ class EPub
     /**
      * Map the items of a ZIP file to their respective file sizes.
      *
-     * @param string $file|null Path to a ZIP file or null for current ZIP file
+     * @param ?string $file Path to a ZIP file or null for current ZIP file
      * @return array<mixed> (filename => file size)
      */
     protected function loadSizeMap($file = null)
@@ -2252,10 +2254,7 @@ class EPub
      */
     public function getImageCount()
     {
-        $entries = $this->getZipEntries();
-        $images = array_filter($entries, static function ($k) {
-            return preg_match('/(.jpeg|.jpg|.png|.gif)/', $k);
-        }, ARRAY_FILTER_USE_KEY);
+        $images = $this->zip->findFiles();
 
         return count($images);
     }

@@ -62,7 +62,7 @@ class EPubTest extends TestCase
     public function testGetZipEntries(): void
     {
         $entries = $this->epub->getZipEntries();
-        $this->assertCount(49, $entries);
+        $this->assertCount(45, $entries);
         $this->assertArrayHasKey(EPub::METADATA_FILE, $entries);
         $this->assertEquals(250, $entries[EPub::METADATA_FILE]['size']);
 
@@ -788,8 +788,8 @@ class EPubTest extends TestCase
      * @param string $referenceStart The expected start of the extracted contents.
      * @param string $referenceEnd The expected end of the extracted contents.
      * @param string $spineIndex The spine index of the item to extract contents from.
-     * @param string $fragmentBegin The anchor name (ID) where to start extraction.
-     * @param string $fragmentEnd The anchor name (ID) where to end extraction.
+     * @param ?string $fragmentBegin The anchor name (ID) where to start extraction.
+     * @param ?string $fragmentEnd The anchor name (ID) where to end extraction.
      * @throws Exception
      * @return void
      */
@@ -841,8 +841,8 @@ class EPubTest extends TestCase
     /**
      * @param string $referenceFile
      * @param string $spineIndex
-     * @param string $fragmentBegin
-     * @param string $fragmentEnd
+     * @param ?string $fragmentBegin
+     * @param ?string $fragmentEnd
      * @throws Exception
      * @return void
      */
@@ -911,5 +911,7 @@ class EPubTest extends TestCase
             $item->getData();
         }
         $this->assertEquals($oldManifest, $newManifest);
+
+        unlink(static::TEST_EPUB_COVER);
     }
 }
