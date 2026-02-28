@@ -62,7 +62,7 @@ class EPubTest extends TestCase
     public function testGetZipEntries(): void
     {
         $entries = $this->epub->getZipEntries();
-        $this->assertCount(45, $entries);
+        $this->assertCount(49, $entries);
         $this->assertArrayHasKey(EPub::METADATA_FILE, $entries);
         $this->assertEquals(250, $entries[EPub::METADATA_FILE]['size']);
 

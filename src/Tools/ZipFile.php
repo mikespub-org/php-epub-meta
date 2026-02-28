@@ -94,10 +94,10 @@ class ZipFile
             if (str_starts_with($fileName, '__MACOSX')) {
                 continue;
             }
-            if (empty($entry['size'])) {
-                continue;
-            }
             if ($this->mIgnoreDir) {
+                if (empty($entry['size'])) {
+                    continue;
+                }
                 $fileName = basename($fileName);
             }
             $this->mEntries[$fileName] = $entry;
