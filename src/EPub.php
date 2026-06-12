@@ -555,7 +555,7 @@ class EPub implements BookInterface
                 $authors = [];
             } else {
                 $authors = explode(',', $authors);
-                $authors = array_map('trim', $authors);
+                $authors = array_map(trim(...), $authors);
             }
         }
 
@@ -809,7 +809,7 @@ class EPub implements BookInterface
                 $subjects = [];
             } else {
                 $subjects = explode(',', $subjects);
-                $subjects = array_map('trim', $subjects);
+                $subjects = array_map(trim(...), $subjects);
             }
         }
 

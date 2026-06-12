@@ -378,7 +378,7 @@ class Comic implements BookInterface
         if (empty($tags)) {
             return [];
         }
-        return array_map('trim', explode(',', $tags));
+        return array_map(trim(...), explode(',', $tags));
     }
 
     /**

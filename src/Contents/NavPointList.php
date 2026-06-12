@@ -34,16 +34,6 @@ class NavPointList extends ArrayIterator
     }
 
     /**
-     * @param NavPoint $navPoint
-     * @return void
-     * @deprecated 2.1.0 use normal append() instead
-     */
-    public function addNavPoint(NavPoint $navPoint)
-    {
-        $this->append($navPoint);
-    }
-
-    /**
      * @param string $file
      *
      * @return array|NavPoint[]

@@ -436,7 +436,7 @@ class Handler
                 'title' => $title,
                 'author' => $author,
             ];
-        } catch (Exception $e) {
+        } catch (Exception) {
             return [
                 'title' => pathinfo($bookPath, PATHINFO_FILENAME),
                 'author' => '',
