@@ -5,12 +5,3 @@ parameters:
 			identifier: method.notFound
 			count: 1
 			path: src/Data/Item.php
-
-		-
-			message: '''
-				#^Call to deprecated method expectExceptionMessage\(\) of class PHPUnit\\Framework\\TestCase\:
-				https\://github\.com/sebastianbergmann/phpunit/issues/6560$#
-			'''
-			identifier: method.deprecated
-			count: 7
-			path: test/EPubTest.php

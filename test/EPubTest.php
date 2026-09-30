@@ -79,28 +79,28 @@ class EPubTest extends TestCase
     public function testLoadNonZip(): void
     {
         //$this->expectException(Exception::class);
-        //$this->expectExceptionMessage('Failed to read EPUB file. Not a zip archive.');
-        //$this->expectExceptionMessage('Failed to read epub file');
+        //$this->expectExceptionMessageIsOrContains('Failed to read EPUB file. Not a zip archive.');
+        //$this->expectExceptionMessageIsOrContains('Failed to read epub file');
         $this->expectException(ValueError::class);
-        $this->expectExceptionMessage('Invalid or uninitialized Zip object');
+        $this->expectExceptionMessageIsOrContains('Invalid or uninitialized Zip object');
         new Epub(static::TEST_IMAGE);
     }
 
     public function testLoadBrokenZip(): void
     {
         //$this->expectException(Exception::class);
-        //$this->expectExceptionMessage('Failed to read EPUB file. Zip archive inconsistent.');
-        //$this->expectExceptionMessage('Unable to find metadata.xml');
+        //$this->expectExceptionMessageIsOrContains('Failed to read EPUB file. Zip archive inconsistent.');
+        //$this->expectExceptionMessageIsOrContains('Unable to find metadata.xml');
         $this->expectException(ValueError::class);
-        $this->expectExceptionMessage('Invalid or uninitialized Zip object');
+        $this->expectExceptionMessageIsOrContains('Invalid or uninitialized Zip object');
         new Epub(static::BROKEN_ZIP);
     }
 
     public function testLoadMissingFile(): void
     {
         $this->expectException(Exception::class);
-        //$this->expectExceptionMessage('Failed to read EPUB file. No such file.');
-        $this->expectExceptionMessage('Epub file does not exist!');
+        //$this->expectExceptionMessageIsOrContains('Failed to read EPUB file. No such file.');
+        $this->expectExceptionMessageIsOrContains('Epub file does not exist!');
         new Epub('/a/file/that/is/not_there.epub');
     }
 
@@ -111,17 +111,17 @@ class EPubTest extends TestCase
     public function testLoadDirectory(): void
     {
         $this->expectException(Exception::class);
-        //$this->expectExceptionMessage('Failed to read EPUB file.');
-        $this->expectExceptionMessage('Epub file does not exist!');
+        //$this->expectExceptionMessageIsOrContains('Failed to read EPUB file.');
+        $this->expectExceptionMessageIsOrContains('Epub file does not exist!');
         new Epub(__DIR__);
     }
 
     public function testLoadEmptyZip(): void
     {
         $this->expectException(Exception::class);
-        //$this->expectExceptionMessage('Failed to read from EPUB container: META-INF/container.xml');
-        //$this->expectExceptionMessage('Failed to read epub file');
-        $this->expectExceptionMessage('Unable to find ' . EPub::METADATA_FILE);
+        //$this->expectExceptionMessageIsOrContains('Failed to read from EPUB container: META-INF/container.xml');
+        //$this->expectExceptionMessageIsOrContains('Failed to read epub file');
+        $this->expectExceptionMessageIsOrContains('Unable to find ' . EPub::METADATA_FILE);
         new Epub(static::EMPTY_ZIP);
     }
 
@@ -825,7 +825,7 @@ class EPubTest extends TestCase
     public function testItemContentsStartFragmentException(): void
     {
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Begin of fragment not found:');
+        $this->expectExceptionMessageIsOrContains('Begin of fragment not found:');
         $spine = $this->epub->getSpine();
         $spine[3]->getContents('NonExistingElement');
     }
@@ -833,7 +833,7 @@ class EPubTest extends TestCase
     public function testItemContentsEndFragmentException(): void
     {
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('End of fragment not found:');
+        $this->expectExceptionMessageIsOrContains('End of fragment not found:');
         $spine = $this->epub->getSpine();
         $spine[3]->getContents(null, 'NonExistingElement');
     }
