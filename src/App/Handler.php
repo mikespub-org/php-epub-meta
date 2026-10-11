@@ -93,9 +93,7 @@ class Handler
      */
     public function handle($params = null)
     {
-        if (!isset($params)) {
-            $params = $this->getRequestFromGlobals();
-        }
+        $params ??= $this->getRequestFromGlobals();
         $this->params = $params;
         // proxy google requests
         if (isset($params['api'])) {
@@ -501,9 +499,7 @@ class Handler
                 if ($name) {
                     $role = !empty($params['authoras'][$num]) ? $params['authoras'][$num] : 'Writer';
                     if (in_array($role, Comic::CREATOR_ROLES)) {
-                        if (!isset($authors[$role])) {
-                            $authors[$role] = [];
-                        }
+                        $authors[$role] ??= [];
                         $authors[$role][] = $name;
                     }
                 }
